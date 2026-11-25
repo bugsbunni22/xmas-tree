@@ -50,8 +50,11 @@ export function dbErrorMessage(e) {
   const code = e && (e.code ?? e.errorInfo?.code);
   if (code === 5 || code === "not-found" || /NOT_FOUND/.test(String(e && e.message)))
     return "Firestore 데이터베이스를 찾지 못했어요. Firebase 콘솔에서 Firestore Database를 만들었는지 확인해주세요.";
-  if (code === 7 || code === "permission-denied" || /PERMISSION_DENIED/.test(String(e && e.message)))
-    return "서비스 계정에 Firestore 권한이 없어요. 같은 Firebase 프로젝트의 서비스 계정 키인지 확인해주세요.";
+  const text = String(e && (e.details || e.message) || "");
+  if (/has not been used|is disabled|SERVICE_DISABLED|API has not been/i.test(text))
+    return "Firestore가 아직 켜져 있지 않아요. Firebase 콘솔 → 빌드 → Firestore Database → 데이터베이스 만들기(서울, 프로덕션 모드)를 해주세요. 만든 뒤 몇 분 지나면 연결돼요.";
+  if (code === 7 || code === "permission-denied" || /PERMISSION_DENIED/.test(text))
+    return "Firestore에 접근할 수 없어요. ① Firebase 콘솔에서 Firestore Database를 만들었는지, ② 서비스 계정 JSON이 같은 프로젝트(xmas-tree) 것인지 확인해주세요.";
   if (code === 16 || /UNAUTHENTICATED|invalid_grant/i.test(String(e && e.message)))
     return "서비스 계정 키가 유효하지 않아요. 키를 새로 생성해서 다시 넣어주세요.";
   return null;
