@@ -1,5 +1,5 @@
 // POST /api/snow  →  1분 동안 함박눈
-import { store } from "./_store.js";
+import { store, dbErrorMessage } from "./_store.js";
 import { send, limited } from "./_lib.js";
 
 export default async function handler(req, res) {
@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     return send(res, 200, { snowUntil });
   } catch (e) {
     console.error(e);
-    return send(res, ["NO_DB", "BAD_CREDENTIALS"].includes(e.message) ? 503 : 500, { error: "눈을 뿌리지 못했어요." });
+    const msg = dbErrorMessage(e);
+    return send(res, msg ? 503 : 500, { error: msg || "눈을 뿌리지 못했어요." });
   }
 }

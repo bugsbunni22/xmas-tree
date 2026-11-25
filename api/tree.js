@@ -2,7 +2,7 @@
 // POST   /api/tree          장식 걸기   (헤더 x-tree-key: 브라우저마다 만든 비밀 키)
 // DELETE /api/tree?id=...   장식 떼기   (건 사람의 키, 또는 x-tree-admin: ADMIN_KEY)
 import { randomUUID } from "node:crypto";
-import { store } from "./_store.js";
+import { store, dbErrorMessage } from "./_store.js";
 import { MAX_PER_PERSON, MAX_TOTAL, send, hash, clientKey, isAdmin, limited, readBody, checkDesign, publicItem } from "./_lib.js";
 
 export default async function handler(req, res) {
@@ -53,8 +53,8 @@ export default async function handler(req, res) {
     return send(res, 405, { error: "지원하지 않는 요청이에요." });
   } catch (e) {
     console.error(e);
-    if (e.message === "NO_DB" || e.message === "BAD_CREDENTIALS")
-      return send(res, 503, { error: "저장소가 아직 연결되지 않았어요. Vercel 환경 변수 FIREBASE_SERVICE_ACCOUNT를 확인해주세요." });
+    const msg = dbErrorMessage(e);
+    if (msg) return send(res, 503, { error: msg });
     return send(res, 500, { error: "서버 오류가 났어요." });
   }
 }
