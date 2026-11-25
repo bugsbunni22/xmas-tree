@@ -25,6 +25,7 @@ function parseServiceAccount(raw) {
 function credentials() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (raw && raw.trim()) return parseServiceAccount(raw);
+  if (raw !== undefined) throw new Error("EMPTY");
   const { FIREBASE_PROJECT_ID: projectId, FIREBASE_CLIENT_EMAIL: clientEmail, FIREBASE_PRIVATE_KEY: key } = process.env;
   if (projectId && clientEmail && key) return { projectId, clientEmail, privateKey: key.replace(/\\n/g, "\n") };
   throw new Error("NO_DB");
@@ -32,12 +33,13 @@ function credentials() {
 
 // 저장소 연결 문제를 사람이 읽을 수 있는 문구로 (해당 없으면 null)
 export function dbErrorMessage(e) {
-  const near = Object.keys(process.env).filter((k) => /FIREBASE|SERVICE_ACCOUNT/i.test(k));
+  const near = Object.keys(process.env).filter((k) => k !== "FIREBASE_SERVICE_ACCOUNT" && /FIREBASE|SERVICE_ACCOUNT/i.test(k));
   switch (e && e.message) {
     case "NO_DB":
       return near.length
         ? `FIREBASE_SERVICE_ACCOUNT 환경 변수를 찾지 못했어요. 비슷한 이름(${near.join(", ")})만 있어요. 이름을 정확히 FIREBASE_SERVICE_ACCOUNT로 바꿔주세요.`
         : "Vercel에 FIREBASE_SERVICE_ACCOUNT 환경 변수가 없어요. 저장한 뒤 Redeploy를 했는지, Production 환경에 체크했는지 확인해주세요.";
+    case "EMPTY": return "FIREBASE_SERVICE_ACCOUNT는 있는데 값이 비어 있어요. Edit 화면에서 빈 칸인 채로 저장하면 비워져요. JSON 내용 전체를 다시 붙여넣고 저장한 뒤 Redeploy 해주세요.";
     case "BAD_JSON": return "FIREBASE_SERVICE_ACCOUNT 값이 JSON 형식이 아니에요. 서비스 계정 JSON 파일 내용 전체({ 부터 } 까지)를 그대로 붙여넣어 주세요.";
     case "WEB_CONFIG": return "FIREBASE_SERVICE_ACCOUNT에 웹 앱 설정(apiKey)이 들어가 있어요. 프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성으로 받은 JSON을 넣어주세요.";
     case "NOT_SERVICE_ACCOUNT": return "FIREBASE_SERVICE_ACCOUNT 값에 private_key, client_email, project_id가 없어요. 서비스 계정 JSON 파일 내용 전체를 넣어주세요.";
