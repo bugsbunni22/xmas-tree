@@ -230,8 +230,10 @@ function showBubble(o) {
   const sm = document.createElement("small");
   sm.textContent = new Date(o.at).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
   bubble.append(sm);
-  const r = svg.getBoundingClientRect(), sr = stage.getBoundingClientRect();
-  let left = r.left - sr.left + o.x * (r.width / 200), top = r.top - sr.top + (o.y - 8 * o.size) * (r.height / 262);
+  const sr = stage.getBoundingClientRect(), pt = svg.createSVGPoint();
+  pt.x = o.x; pt.y = o.y - 8 * o.size;
+  const sp = pt.matrixTransform(svg.getScreenCTM());
+  let left = sp.x - sr.left, top = sp.y - sr.top;
   bubble.hidden = false;
   const w = bubble.offsetWidth, h = bubble.offsetHeight;
   left = Math.max(w / 2 + 4, Math.min(sr.width - w / 2 - 4, left));
@@ -305,6 +307,29 @@ function setupPanel() {
   $("shine").onchange = () => { design.shine = $("shine").checked; update(); };
 
   setupPad();
+
+  // 폰 화면: ① 꾸미기 → ② 트리에 달기 (한 번에 한 단계)
+  const narrow = matchMedia("(max-width: 820px)");
+  const msg1 = document.createElement("div");
+  msg1.className = "msg"; msg1.setAttribute("role", "status");
+  $("next").after(msg1);
+  const setStep = (n) => {
+    document.body.dataset.step = String(n);
+    $("go1").setAttribute("aria-selected", n === 1);
+    $("go2").setAttribute("aria-selected", n === 2);
+    msg1.textContent = "";
+    if (narrow.matches) window.scrollTo({ top: 0 });
+  };
+  const toHang = () => {
+    const d = cleanDesign(design);
+    if (d.kind === "drawing" && !/[1-8]/.test(d.px)) { msg1.textContent = "그림판에 장식을 먼저 그려주세요."; return; }
+    setStep(2);
+  };
+  $("go1").onclick = () => setStep(1);
+  $("go2").onclick = () => setStep(2);
+  $("next").onclick = toHang;
+  $("back").onclick = () => setStep(1);
+  setStep(1);
 
   function update() {
     const d = cleanDesign(design);
