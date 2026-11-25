@@ -81,10 +81,10 @@ main{max-width:1240px;margin:0 auto;padding:20px max(5vw,16px) 48px;display:grid
 .types button{height:58px;border:2px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;display:grid;place-items:center;padding:0}
 .types button svg{width:38px;height:38px}
 .types button[aria-pressed=true]{border-color:var(--red);background:#fff2f3}
-.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(32px,1fr));gap:6px}
 .sw{width:100%;max-width:40px;aspect-ratio:1;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line);cursor:pointer;padding:0;justify-self:center}
 .sw[aria-pressed=true]{box-shadow:0 0 0 3px var(--ink)}
-.sw.custom{position:relative;overflow:hidden;background:conic-gradient(#f33,#fd3,#3d6,#3cf,#63f,#f3c,#f33)}
+.sw.custom{margin:0;display:block;position:relative;overflow:hidden;background:conic-gradient(#f33,#fd3,#3d6,#3cf,#63f,#f3c,#f33)}
 .sw.custom input{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);opacity:0;cursor:pointer;border:0;padding:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{min-height:40px;padding:0 12px 0 6px;border-radius:20px;border:2px solid var(--line);background:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;font:14px "Gowun Dodum";color:var(--ink)}
