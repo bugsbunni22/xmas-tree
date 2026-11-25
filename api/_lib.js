@@ -82,3 +82,26 @@ export function publicItem(id, o) {
   const { owner, ...rest } = o;
   return { id, ...rest };
 }
+
+// 트리 id: "main"(내 첫 트리) 또는 8자 코드
+export const TREE_ID = /^(main|[a-z2-9]{8})$/;
+export function treeId(req) {
+  const t = String(req.query?.t ?? new URL(req.url, "http://x").searchParams.get("t") ?? "main");
+  return TREE_ID.test(t) ? t : null;
+}
+export function queryParam(req, name) {
+  return String(req.query?.[name] ?? new URL(req.url, "http://x").searchParams.get(name) ?? "");
+}
+
+// 트리 주인: ADMIN_KEY(사이트 관리자) 또는 트리를 만들 때 받은 주인 토큰
+export function isTreeOwner(req, tree) {
+  if (isAdmin(req)) return true;
+  const k = req.headers["x-tree-owner"];
+  return typeof k === "string" && k.length >= 16 && k.length <= 100 && !!tree.owner && hash(k) === tree.owner;
+}
+
+export function checkTitle(v) {
+  const t = typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
+  if (Array.from(t).length < 1 || Array.from(t).length > 24 || /[\u0000-\u001f<>]/.test(t)) return null;
+  return t;
+}

@@ -20,7 +20,9 @@
 html,body{margin:0}
 body{background:radial-gradient(120% 80% at 30% 0%,#1b4a39 0%,var(--night2) 35%,var(--night) 75%) fixed;color:var(--snow);font:16px/1.55 "Gowun Dodum",system-ui,sans-serif;overflow-x:clip;min-height:100vh}
 h1,h2,h3,.btn,.tabs button{font-family:"Jua","Gowun Dodum",sans-serif;font-weight:400}
-header{padding:clamp(20px,3vw,40px) max(5vw,16px) 0;max-width:1240px;margin:0 auto}
+header{padding:clamp(20px,3vw,40px) max(5vw,16px) 0;max-width:1240px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.mk{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:22px;border:2px solid var(--gold);color:var(--gold);text-decoration:none;font:17px Jua,sans-serif;white-space:nowrap}
+.mk:hover{background:#f3c34d1f}
 h1{font-size:clamp(32px,5vw,50px);line-height:1.05;margin:0 0 8px;text-wrap:balance}
 .sub{margin:0;color:#cfe3da;font-size:17px}
 .count{margin-top:10px;color:var(--gold);font-size:15px}
@@ -44,7 +46,26 @@ main{max-width:1240px;margin:0 auto;padding:20px max(5vw,16px) 48px;display:grid
 .bubble[hidden]{display:none}
 .loadnote{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);font-size:14px;color:#cfe3da;background:#0007;padding:6px 12px;border-radius:10px;white-space:nowrap}
 .loadnote[hidden]{display:none}
-.panel{color-scheme:light;background:var(--snow);color:var(--ink);border-radius:22px;padding:clamp(18px,2.4vw,28px);box-shadow:0 20px 50px #0007}
+.panel{color-scheme:light;background:var(--snow);color:var(--ink);border-radius:22px;box-shadow:0 20px 50px #0007}
+.panelin{padding:clamp(18px,2.4vw,28px)}
+.owner{background:#fff8e6;border:2px solid #f3dc9a;border-radius:16px;padding:16px}
+.owner p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+.copyrow{display:flex;gap:8px;margin-bottom:6px}
+.copyrow input{flex:1;font-size:14px!important;padding:8px 10px!important;background:#fff}
+.copyrow .tool{flex:none}
+.owner details{margin-top:10px;font-size:14px}
+.owner summary{cursor:pointer;color:var(--ink);min-height:32px}
+.owner .warn{color:#9a5b00}
+.owner.new{box-shadow:0 0 0 4px var(--gold)}
+.center{min-height:70vh;display:grid;place-items:center;padding:24px max(5vw,16px)}
+.card{width:min(520px,100%);background:var(--snow);color:var(--ink);color-scheme:light;border-radius:22px;padding:clamp(22px,4vw,36px);box-shadow:0 20px 50px #0007}
+.card h2{font-size:28px;margin:0 0 6px;line-height:1.15}
+.card .lead{color:var(--muted);margin:0 0 16px}
+.card .btn{width:100%;margin-top:14px}
+.trees{list-style:none;padding:0;margin:8px 0 0}
+.trees li{border-top:1px solid var(--line)}
+.trees a{display:flex;justify-content:space-between;gap:10px;padding:12px 2px;color:var(--ink);text-decoration:none;min-height:44px}
+.trees a span{color:var(--muted);font-size:14px}
 .panel h2{font-size:22px;margin:0 0 12px;line-height:1.2}
 .panel h3{font-size:16px;margin:16px 0 8px;color:var(--ink)}
 .panel h3 small{font-family:"Gowun Dodum";color:var(--muted);font-size:13px;margin-left:4px}
@@ -107,7 +128,11 @@ input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--gold);ou
   html:not(.widget) main{flex:1;min-height:0;width:100%;align-items:stretch;padding-bottom:24px}
   html:not(.widget) .stagewrap{container-type:size;height:100%;display:flex;align-items:center;justify-content:center}
   html:not(.widget) .stage{width:min(100cqw,100cqh * 200 / 262)}
-  html:not(.widget) .panel{overflow-y:auto;max-height:100%;overscroll-behavior:contain;scrollbar-gutter:stable}
+  html:not(.widget) .panel{max-height:100%;display:flex;flex-direction:column;overflow:hidden;padding:8px 6px 8px 0}
+  html:not(.widget) .panelin{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:clamp(10px,1.6vw,20px) clamp(14px,2vw,22px) clamp(10px,1.6vw,20px) clamp(18px,2.4vw,28px);scrollbar-width:thin;scrollbar-color:#c3d2cb transparent}
+  .panelin::-webkit-scrollbar{width:10px}
+  .panelin::-webkit-scrollbar-thumb{background:#c3d2cb;border-radius:8px;border:2px solid var(--snow)}
+  .panelin::-webkit-scrollbar-track{background:transparent;margin:12px 0}
 }
 /* 좁은 화면(폰): 한 번에 한 단계 */
 @media(max-width:820px){
@@ -116,15 +141,15 @@ input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--gold);ou
   .stepnav button[aria-selected=true]{background:var(--snow);color:var(--ink)}
   html:not(.widget) .mnav{display:block}
   #partHang .mnav{margin:0 0 16px}
-  body[data-step="1"] .stagewrap,body[data-step="1"] #partHang,body[data-step="2"] #partMake{display:none}
+  body[data-step="1"] .stagewrap,body[data-step="1"] #partHang,body[data-step="1"] #ownerBox,body[data-step="2"] #partMake{display:none}
   body[data-step="2"] .stage{max-width:min(440px,100%)}
 }
 [hidden]{display:none!important}
-@media(max-width:820px){main{grid-template-columns:minmax(0,1fr)}.stage{max-width:480px}}
+@media(max-width:820px){main{grid-template-columns:minmax(0,1fr)}.stage{max-width:480px}header{flex-wrap:wrap}}
 @media(max-width:420px){.maker{grid-template-columns:96px minmax(0,1fr)}.pvbox{width:96px;height:96px}.pvbox svg{width:84px;height:84px}.drawwrap{grid-template-columns:minmax(0,1fr)}.tools{flex-direction:row;flex-wrap:wrap}}
 /* 위젯 모드: 투명 배경, 트리만 */
 html.widget,html.widget body{background:transparent!important;overflow:hidden}
-html.widget header,html.widget .panel,html.widget footer,html.widget .loadnote{display:none}
+html.widget header,html.widget #createView,html.widget .panel,html.widget footer,html.widget .loadnote{display:none}
 html.widget main{display:block;padding:0;max-width:none;height:100vh}
 html.widget .stepnav,html.widget .mnav{display:none!important}
 html.widget .stage{height:100vh;max-height:none;width:auto;aspect-ratio:200/262}
@@ -137,10 +162,30 @@ html.widget #tree{cursor:pointer}
 </head>
 <body>
 <header>
-  <h1 id="title">내 트리를 꾸며줘!</h1>
-  <p class="sub" id="subtitle"></p>
-  <div class="count" id="count">&nbsp;</div>
+  <div>
+    <h1 id="title">&nbsp;</h1>
+    <p class="sub" id="subtitle"></p>
+    <div class="count" id="count">&nbsp;</div>
+  </div>
+  <a class="mk" id="mkLink" href="/new">나도 트리 만들기</a>
 </header>
+<div class="center" id="createView" hidden>
+  <section class="card" aria-labelledby="createTitle">
+    <h2 id="createTitle">나도 트리 만들기</h2>
+    <p class="lead" id="createLead">이름만 정하면 바로 만들어져요. 링크를 친구들에게 보내면 친구들이 장식을 걸어줘요.</p>
+    <form id="createForm">
+      <label for="newTitle">트리 이름</label>
+      <input id="newTitle" maxlength="24" autocomplete="off" placeholder="예: 민지네 트리">
+      <button class="btn" id="createBtn" type="submit">트리 만들기</button>
+      <div class="msg" id="createMsg" role="status"></div>
+    </form>
+    <div id="myTreesWrap" hidden>
+      <h3>내가 만든 트리</h3>
+      <ul class="trees" id="myTrees"></ul>
+    </div>
+    <p class="foot">로그인은 필요 없어요. 트리를 만든 이 브라우저가 주인이 되고, 다른 기기에서는 트리의 '관리 링크'로 주인이 될 수 있어요.</p>
+  </section>
+</div>
 <nav class="stepnav" role="tablist" aria-label="단계">
   <button type="button" role="tab" id="go1" aria-selected="true">① 장식 꾸미기</button>
   <button type="button" role="tab" id="go2" aria-selected="false">② 트리에 달기</button>
@@ -155,6 +200,21 @@ html.widget #tree{cursor:pointer}
     </div>
   </div>
   <section class="panel" aria-label="장식 만들기">
+   <div class="panelin">
+    <div class="step owner" id="ownerBox" hidden>
+      <h2>내 트리 관리</h2>
+      <p id="ownerNote">이 링크를 친구들에게 보내면 장식을 걸어줄 수 있어요.</p>
+      <div class="copyrow"><input id="shareUrl" readonly aria-label="공유 링크"><button type="button" class="tool" id="copyShare">복사</button></div>
+      <p>트리 위젯(Windows)에는 이 주소를 넣으면 내 모니터 구석에 이 트리가 떠요.</p>
+      <label for="renameInput">트리 이름</label>
+      <div class="copyrow"><input id="renameInput" maxlength="24" autocomplete="off"><button type="button" class="tool" id="renameBtn">바꾸기</button></div>
+      <details id="manageWrap">
+        <summary>다른 기기에서도 주인이 되려면</summary>
+        <p class="warn">아래 관리 링크를 열면 그 기기도 주인이 돼요. 장식을 뗄 수 있는 권한이니 나만 갖고 있어요.</p>
+        <div class="copyrow"><input id="manageUrl" readonly aria-label="관리 링크"><button type="button" class="tool" id="copyManage">복사</button></div>
+      </details>
+      <div class="msg" id="ownerMsg" role="status"></div>
+    </div>
     <div class="part" id="partMake">
     <div class="step">
       <h2>1. 장식 만들기</h2>
@@ -238,9 +298,10 @@ html.widget #tree{cursor:pointer}
     </div>
     <p class="foot">쪽지는 이 트리를 보는 사람 누구나 읽을 수 있어요. 트리의 장식에 마우스를 올리거나 눌러보세요.</p>
     </div>
+   </div>
   </section>
 </main>
 
-<script type="module" src="app.js"></script>
+<script type="module" src="/app.js"></script>
 </body>
 </html>

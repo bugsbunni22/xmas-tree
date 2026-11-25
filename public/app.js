@@ -6,6 +6,13 @@ const WIDGET = params.has("widget");
 const SNOW_ON = params.get("snow") !== "0";
 const SITE_URL = location.origin + location.pathname;
 if (WIDGET) document.documentElement.classList.add("widget");
+// 주소: /  → 내 첫 트리(main), /t/코드 → 친구들 트리, /new → 트리 만들기
+const PATH = location.pathname.replace(/\/+$/, "") || "/";
+const ROUTE = PATH.match(/^\/t\/([a-z2-9]{8})$/);
+const CREATE = !WIDGET && PATH === "/new";
+const TREE = ROUTE ? ROUTE[1] : "main";
+const UNKNOWN = !CREATE && PATH !== "/" && !ROUTE;
+const Q = "?t=" + TREE;
 
 const TYPES = ["ball", "star", "bell", "candy", "gift", "heart", "flake", "sock"];
 const TYPE_NAMES = { ball: "방울", star: "별", bell: "종", candy: "지팡이 사탕", gift: "선물 상자", heart: "하트", flake: "눈송이", sock: "양말", drawing: "손그림" };
@@ -177,11 +184,22 @@ if (!myKey) {
   myKey = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, "0")).join("");
   store.set("tree-key", myKey);
 }
-const mineIds = new Set((() => { try { return JSON.parse(store.get("tree-mine") || "[]"); } catch (e) { return []; } })());
-const saveMine = () => store.set("tree-mine", JSON.stringify([...mineIds]));
+const MINE_KEY = TREE === "main" ? "tree-mine" : "tree-mine:" + TREE; // 트리마다 따로
+const mineIds = new Set((() => { try { return JSON.parse(store.get(MINE_KEY) || "[]"); } catch (e) { return []; } })());
+const saveMine = () => store.set(MINE_KEY, JSON.stringify([...mineIds]));
 if (params.get("admin")) { store.set("tree-admin", params.get("admin")); history.replaceState(null, "", SITE_URL); }
 const ADMIN = WIDGET ? "" : store.get("tree-admin") || "";
 const isMine = (o) => mineIds.has(o.id);
+// 트리 주인 토큰: 트리를 만든 브라우저에 저장. 관리 링크(#own=…)로 다른 기기에도 옮길 수 있어요.
+const owners = (() => { try { return JSON.parse(store.get("tree-owners") || "{}") || {}; } catch (e) { return {}; } })();
+const saveOwners = () => store.set("tree-owners", JSON.stringify(owners));
+if (!WIDGET && location.hash.startsWith("#own=")) {
+  const tok = decodeURIComponent(location.hash.slice(5));
+  if (/^[0-9a-f]{48}$/.test(tok) && TREE !== "main") { owners[TREE] = { token: tok, title: (owners[TREE] && owners[TREE].title) || "" }; saveOwners(); }
+  history.replaceState(null, "", location.pathname + location.search);
+}
+const OWNER_TOKEN = WIDGET ? "" : (owners[TREE] && owners[TREE].token) || "";
+const IS_OWNER = !!OWNER_TOKEN || !!ADMIN;
 
 function render() {
   svg.querySelector("#orns").innerHTML = items.map((o) => {
@@ -198,8 +216,8 @@ function render() {
 
 function renderMine() {
   if (WIDGET) return;
-  const list = ADMIN ? items : items.filter(isMine);
-  $("mineTitle").textContent = ADMIN ? `관리자 모드: 모든 장식 (${items.length})` : "내가 건 장식";
+  const list = IS_OWNER ? items : items.filter(isMine);
+  $("mineTitle").textContent = IS_OWNER ? `트리 주인: 모든 장식 (${items.length})` : "내가 건 장식";
   $("mineWrap").hidden = !list.length;
   const ul = $("mine");
   ul.textContent = "";
@@ -207,7 +225,7 @@ function renderMine() {
     const li = document.createElement("li");
     li.innerHTML = `<svg viewBox="-14 -14 28 28" aria-hidden="true">${ornSVG(o, "m" + o.id)}</svg>`;
     const s = document.createElement("span");
-    s.textContent = `${ADMIN ? o.from + " · " : ""}${TYPE_NAMES[o.kind === "drawing" ? "drawing" : o.type]} · ${o.note || "(쪽지 없음)"}`;
+    s.textContent = `${IS_OWNER ? o.from + " · " : ""}${TYPE_NAMES[o.kind === "drawing" ? "drawing" : o.type]} · ${o.note || "(쪽지 없음)"}`;
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = "떼기";
@@ -282,9 +300,7 @@ function swatchRow(el, colors, get, set, labelOf) {
 }
 
 function setupPanel() {
-  $("title").textContent = SITE.title;
   $("subtitle").textContent = SITE.subtitle;
-  document.title = SITE.title;
   stage.classList.add("placing");
 
   const types = $("types"), pats = $("patterns");
@@ -330,6 +346,7 @@ function setupPanel() {
   $("next").onclick = toHang;
   $("back").onclick = () => setStep(1);
   setStep(1);
+  setupOwner(setStep);
 
   function update() {
     const d = cleanDesign(design);
@@ -380,7 +397,7 @@ function setupPanel() {
     if (!spot) return say("트리를 눌러 장식을 걸 자리를 먼저 정해주세요.");
     const name = from.value.trim();
     if (!name) { from.focus(); return say("보내는 사람 이름을 적어주세요."); }
-    if (!ADMIN && items.filter(isMine).length >= SITE.maxPerPerson) return say(`한 사람당 ${SITE.maxPerPerson}개까지 걸 수 있어요. 아래에서 하나 떼고 다시 걸어주세요.`);
+    if (!IS_OWNER && items.filter(isMine).length >= SITE.maxPerPerson) return say(`한 사람당 ${SITE.maxPerPerson}개까지 걸 수 있어요. 아래에서 하나 떼고 다시 걸어주세요.`);
     $("hang").disabled = true;
     try {
       await api.add({ ...d, x: +spot.x.toFixed(1), y: +spot.y.toFixed(1), from: name, note: note.value.trim().slice(0, 200) });
@@ -550,12 +567,12 @@ const loadTimer = setTimeout(() => { $("loadnote").textContent = "연결이 늦�
 async function call(method, path, body) {
   const r = await fetch(path, {
     method, cache: "no-store",
-    headers: { "Content-Type": "application/json", "x-tree-key": myKey, ...(ADMIN ? { "x-tree-admin": ADMIN } : {}) },
+    headers: { "Content-Type": "application/json", "x-tree-key": myKey, ...(ADMIN ? { "x-tree-admin": ADMIN } : {}), ...(OWNER_TOKEN ? { "x-tree-owner": OWNER_TOKEN } : {}) },
     body: body ? JSON.stringify(body) : undefined
   });
   let data = {};
   try { data = await r.json(); } catch (e) {}
-  if (!r.ok) throw new Error(data.error || "서버에 연결하지 못했어요.");
+  if (!r.ok) { const err = new Error(data.error || "서버에 연결하지 못했어요."); err.status = r.status; throw err; }
   return data;
 }
 const pendingIds = new Set(), removedIds = new Set();
@@ -564,8 +581,9 @@ async function refresh() {
   if (pollBusy) return;
   pollBusy = true;
   try {
-    const d = await call("GET", "/api/tree");
+    const d = await call("GET", "/api/tree" + Q);
     clearTimeout(loadTimer); $("loadnote").hidden = true;
+    applyTitle(d.title);
     const next = (Array.isArray(d.items) ? d.items : []).map(cleanItem).filter(Boolean);
     const skew = typeof d.now === "number" ? Date.now() - d.now : 0;
     const su = Number(d.snowUntil) || 0;
@@ -580,34 +598,137 @@ async function refresh() {
     render();
   } catch (e) {
     console.error(e);
+    if (e.status === 404) { clearTimeout(loadTimer); showNotFound(); return; }
     $("loadnote").textContent = e.message || "장식을 불러오지 못했어요.";
     $("loadnote").hidden = WIDGET;
   } finally { pollBusy = false; }
 }
 const api = {
   async add(o) {
-    const { item } = await call("POST", "/api/tree", o);
+    const { item } = await call("POST", "/api/tree" + Q, o);
     const c = cleanItem(item);
     mineIds.add(c.id); saveMine(); pendingIds.add(c.id);
     setTimeout(() => pendingIds.delete(c.id), 30000);
     items.push(c); render();
   },
   async remove(id) {
-    await call("DELETE", "/api/tree?id=" + encodeURIComponent(id));
+    await call("DELETE", "/api/tree" + Q + "&id=" + encodeURIComponent(id));
     mineIds.delete(id); saveMine(); removedIds.add(id);
     setTimeout(() => removedIds.delete(id), 30000);
     items = items.filter((o) => o.id !== id); render();
   },
   async snow() {
-    const d = await call("POST", "/api/snow");
+    const d = await call("POST", "/api/snow" + Q);
     blizzardUntil = Math.min(Number(d.snowUntil) || Date.now() + 60000, Date.now() + 120000);
   }
 };
 
-buildTree();
-if (WIDGET) setupWidget(); else setupPanel();
-requestAnimationFrame(() => { resize(); tick(); });
-refresh();
-setInterval(() => { if (WIDGET || !document.hidden) refresh(); }, WIDGET ? 15000 : 10000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+/* ---------- 트리 이름, 주인 메뉴 ---------- */
+let treeTitle = "", stopped = false;
+function applyTitle(t) {
+  const title = t || (TREE === "main" ? SITE.title : "크리스마스 트리");
+  if (WIDGET || title === treeTitle) return;
+  treeTitle = title;
+  $("title").textContent = title;
+  document.title = title;
+  if (OWNER_TOKEN && owners[TREE] && owners[TREE].title !== title) { owners[TREE].title = title; saveOwners(); }
+  const ri = $("renameInput");
+  if (ri && document.activeElement !== ri) ri.value = title;
+}
+function setupOwner(setStep) {
+  if (!IS_OWNER) return;
+  const share = location.origin + (TREE === "main" ? "/" : "/t/" + TREE);
+  const say2 = (t, ok) => { const m = $("ownerMsg"); m.textContent = t; m.classList.toggle("ok", !!ok); };
+  $("ownerBox").hidden = false;
+  $("shareUrl").value = share;
+  if (OWNER_TOKEN) $("manageUrl").value = share + "#own=" + OWNER_TOKEN; else $("manageWrap").hidden = true;
+  const copy = async (input) => {
+    input.select();
+    try { await navigator.clipboard.writeText(input.value); say2("복사했어요!", true); }
+    catch (e) { try { document.execCommand("copy"); say2("복사했어요!", true); } catch (_) { say2("주소를 길게 눌러 직접 복사해 주세요."); } }
+  };
+  $("copyShare").onclick = () => copy($("shareUrl"));
+  $("copyManage").onclick = () => copy($("manageUrl"));
+  $("renameBtn").onclick = async () => {
+    const t = $("renameInput").value.trim();
+    if (!t) return say2("트리 이름을 적어주세요.");
+    $("renameBtn").disabled = true;
+    try { const d = await call("PATCH", "/api/trees" + Q, { title: t }); treeTitle = ""; applyTitle(d.title); say2("이름을 바꿨어요. 친구들 화면엔 10초 안에 바뀌어요.", true); }
+    catch (e) { say2(e.message); }
+    finally { $("renameBtn").disabled = false; }
+  };
+  let justMade = false;
+  try { justMade = sessionStorage.getItem("tree-created") === TREE; if (justMade) sessionStorage.removeItem("tree-created"); } catch (e) {}
+  if (justMade) {
+    $("ownerBox").classList.add("new");
+    $("ownerNote").textContent = "트리를 만들었어요! 이 링크를 친구들에게 보내면 장식을 걸어줄 수 있어요.";
+    setStep(2);
+  }
+}
+
+/* ---------- 트리 만들기 화면 (/new), 없는 트리 ---------- */
+function hideTreeView(title, lead) {
+  stopped = true;
+  document.querySelector("main").hidden = true;
+  document.querySelector(".stepnav").hidden = true;
+  $("count").hidden = true;
+  $("mkLink").hidden = true;
+  $("title").textContent = title;
+  $("subtitle").textContent = lead;
+  document.title = title;
+  $("createView").hidden = false;
+}
+function renderMyTrees() {
+  const list = Object.entries(owners).filter(([id, o]) => /^[a-z2-9]{8}$/.test(id) && o && o.token);
+  $("myTreesWrap").hidden = !list.length;
+  const ul = $("myTrees");
+  ul.textContent = "";
+  for (const [id, o] of list) {
+    const li = document.createElement("li"), a = document.createElement("a"), sp = document.createElement("span");
+    a.href = "/t/" + id;
+    a.textContent = o.title || "내 트리";
+    sp.textContent = "/t/" + id;
+    a.append(sp); li.append(a); ul.append(li);
+  }
+}
+function setupCreate() {
+  hideTreeView("크리스마스 트리", "친구들이 장식을 걸어주는 나만의 트리를 만들어요.");
+  renderMyTrees();
+  setupCreateForm();
+}
+function showNotFound() {
+  if (WIDGET) { $("loadnote").hidden = true; return; }
+  hideTreeView("트리를 찾지 못했어요", "주소가 잘못됐거나 없어진 트리예요.");
+  $("createTitle").textContent = "내 트리 만들기";
+  $("createLead").textContent = "대신 나만의 트리를 만들어 볼까요? 이름만 정하면 바로 만들어져요.";
+  renderMyTrees();
+  if (!showNotFound.bound) { showNotFound.bound = true; setupCreateForm(); }
+}
+function setupCreateForm() {
+  const msg = (t) => { $("createMsg").textContent = t; };
+  $("createForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const title = $("newTitle").value.trim();
+    if (!title) { $("newTitle").focus(); return msg("트리 이름을 적어주세요."); }
+    $("createBtn").disabled = true;
+    try {
+      const d = await call("POST", "/api/trees", { title });
+      owners[d.id] = { token: d.ownerToken, title: d.title };
+      saveOwners();
+      try { sessionStorage.setItem("tree-created", d.id); } catch (_) {}
+      location.href = "/t/" + d.id;
+    } catch (err) { msg(err.message); $("createBtn").disabled = false; }
+  });
+}
+
+if (CREATE) setupCreate();
+else if (UNKNOWN) showNotFound();
+else {
+  buildTree();
+  if (WIDGET) setupWidget(); else setupPanel();
+  requestAnimationFrame(() => { resize(); tick(); });
+  refresh();
+  setInterval(() => { if (!stopped && (WIDGET || !document.hidden)) refresh(); }, WIDGET ? 15000 : 10000);
+  document.addEventListener("visibilitychange", () => { if (!stopped && !document.hidden) refresh(); });
+}
 }
