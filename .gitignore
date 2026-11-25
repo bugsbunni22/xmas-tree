@@ -3,3 +3,7 @@ node_modules/
 .vercel
 widget/node_modules/
 widget/dist/
+# Firebase 서비스 계정 키는 절대 올리지 않기
+*firebase-adminsdk*.json
+serviceAccount*.json
+service-account*.json

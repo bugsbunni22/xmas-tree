@@ -9,49 +9,79 @@
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
 <style>
 /* VOICE  다정하고 들뜬 겨울밤, 친구 집 창문 너머 트리
-   IDEA   눈 내리는 밤 마당에 선 트리에 친구들이 장식을 하나씩 걸어주는 롤링페이퍼
-   PICTURE 크게 그린 트리 한 그루 + 내리는 눈 + 쌓인 눈 언덕
+   IDEA   눈 내리는 밤 마당의 트리에 친구들이 손수 만든 장식을 하나씩 걸어주는 롤링페이퍼
+   PICTURE 크게 그린 트리 + 내리는 눈 + 쌓인 눈 언덕, 옆에는 장식 공방
    COLOUR 깊은 전나무 밤(#0c241c) 바탕, 눈 흰색, 산타 빨강 #d8323e, 별 금색 #f3c34d
    TYPE   제목 Jua, 본문 Gowun Dodum
-   LAYOUT 트리 무대 왼쪽 크게, 꾸미기 패널 오른쪽; 좁으면 제목·트리·패널 순으로 */
-:root{--night:#0c241c;--night2:#123b2d;--snow:#f7fbff;--ink:#13241e;--muted:#5d6f68;--red:#d8323e;--gold:#f3c34d;--line:#dfe6e2;color-scheme:dark}
+   LAYOUT 트리 무대 왼쪽(넓은 화면에선 따라 내려옴), 공방 패널 오른쪽; 좁으면 제목·트리·패널 */
+:root{--night:#0c241c;--night2:#123b2d;--snow:#f7fbff;--ink:#13241e;--muted:#5d6f68;--red:#d8323e;--gold:#f3c34d;--line:#dfe6e2;--soft:#eef4f1;color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-html,body{margin:0;height:100%}
-body{background:radial-gradient(120% 80% at 30% 0%,#1b4a39 0%,var(--night2) 35%,var(--night) 75%);color:var(--snow);font:16px/1.55 "Gowun Dodum",system-ui,sans-serif;overflow-x:clip;min-height:100%;background-attachment:fixed}
-h1,h2,.btn,.chip{font-family:"Jua","Gowun Dodum",sans-serif;font-weight:400}
+html,body{margin:0}
+body{background:radial-gradient(120% 80% at 30% 0%,#1b4a39 0%,var(--night2) 35%,var(--night) 75%) fixed;color:var(--snow);font:16px/1.55 "Gowun Dodum",system-ui,sans-serif;overflow-x:clip;min-height:100vh}
+h1,h2,h3,.btn,.tabs button{font-family:"Jua","Gowun Dodum",sans-serif;font-weight:400}
 header{padding:clamp(20px,3vw,40px) max(5vw,16px) 0;max-width:1240px;margin:0 auto}
 h1{font-size:clamp(32px,5vw,50px);line-height:1.05;margin:0 0 8px;text-wrap:balance}
 .sub{margin:0;color:#cfe3da;font-size:17px}
 .count{margin-top:10px;color:var(--gold);font-size:15px}
-main{max-width:1240px;margin:0 auto;padding:20px max(5vw,16px) 48px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(16px,3vw,40px);align-items:start}
-.stage{position:relative;aspect-ratio:200/262;width:100%;max-height:78vh;margin:0 auto;touch-action:manipulation}
+main{max-width:1240px;margin:0 auto;padding:20px max(5vw,16px) 48px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(16px,3vw,40px);align-items:start}
+.stagewrap{position:sticky;top:12px}
+.stage{position:relative;aspect-ratio:200/262;width:100%;max-height:86vh;margin:0 auto;touch-action:manipulation}
 .stage svg,.stage canvas{position:absolute;inset:0;width:100%;height:100%}
 .stage canvas{pointer-events:none}
 .stage.placing svg{cursor:crosshair}
-.orn{cursor:pointer;transition:transform .15s}
+.orn{cursor:pointer}
 .orn.pop{animation:pop .7s ease-out}
-@keyframes pop{0%{opacity:0;transform:var(--t) scale(2.2)}60%{opacity:1;transform:var(--t) scale(.9)}100%{transform:var(--t) scale(1)}}
-.ghost{opacity:.75;pointer-events:none}
+@keyframes pop{0%{opacity:0;transform:var(--t) scale(2.2)}60%{opacity:1;transform:var(--t) scale(.9)}100%{transform:var(--t)}}
+.ghost{opacity:.8;pointer-events:none}
 .ghost.set{animation:blink 1.2s infinite}
-@keyframes blink{50%{opacity:.35}}
+@keyframes blink{50%{opacity:.4}}
+.tw{animation:tw 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes tw{0%,100%{opacity:.15;transform:scale(.5)}50%{opacity:1;transform:scale(1)}}
 .bubble{position:absolute;z-index:3;max-width:min(260px,80%);background:var(--snow);color:var(--ink);border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.45;box-shadow:0 8px 24px #0006;pointer-events:none;transform:translate(-50%,calc(-100% - 14px));white-space:pre-wrap;overflow-wrap:anywhere}
 .bubble b{display:block;font-family:Jua,sans-serif;font-weight:400;color:var(--red);font-size:15px}
 .bubble small{display:block;color:var(--muted);font-size:12px;margin-top:4px}
 .bubble[hidden]{display:none}
-.panel{background:var(--snow);color:var(--ink);border-radius:22px;padding:clamp(18px,2.4vw,28px);box-shadow:0 20px 50px #0007}
-.panel h2{font-size:22px;margin:0 0 10px;line-height:1.2}
-.step{margin-bottom:20px}
+.loadnote{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);font-size:14px;color:#cfe3da;background:#0007;padding:6px 12px;border-radius:10px;white-space:nowrap}
+.loadnote[hidden]{display:none}
+.panel{color-scheme:light;background:var(--snow);color:var(--ink);border-radius:22px;padding:clamp(18px,2.4vw,28px);box-shadow:0 20px 50px #0007}
+.panel h2{font-size:22px;margin:0 0 12px;line-height:1.2}
+.panel h3{font-size:16px;margin:16px 0 8px;color:var(--ink)}
+.panel h3 small{font-family:"Gowun Dodum";color:var(--muted);font-size:13px;margin-left:4px}
+.step{margin-bottom:26px}
 .hint{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.maker{display:grid;grid-template-columns:120px minmax(0,1fr);gap:16px;align-items:center}
+.pvbox{width:120px;height:120px;border-radius:18px;background:radial-gradient(circle at 50% 40%,#2f8f5b,#155b39);display:grid;place-items:center;position:relative}
+.pvbox svg{width:104px;height:104px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--soft);border-radius:14px;padding:4px;gap:4px}
+.tabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-size:17px;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 2px 6px #0001}
 .types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.types button{height:60px;border:2px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;display:grid;place-items:center;padding:0}
-.types button svg{width:34px;height:34px}
+.types button{height:58px;border:2px solid var(--line);background:#fff;border-radius:14px;cursor:pointer;display:grid;place-items:center;padding:0}
+.types button svg{width:38px;height:38px}
 .types button[aria-pressed=true]{border-color:var(--red);background:#fff2f3}
-.colors{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin-top:10px}
-.colors button{width:100%;max-width:40px;aspect-ratio:1;justify-self:center;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line);cursor:pointer;padding:0}
-.colors button[aria-pressed=true]{box-shadow:0 0 0 3px var(--ink)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px}
+.sw{width:100%;max-width:40px;aspect-ratio:1;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line);cursor:pointer;padding:0;justify-self:center}
+.sw[aria-pressed=true]{box-shadow:0 0 0 3px var(--ink)}
+.sw.custom{position:relative;overflow:hidden;background:conic-gradient(#f33,#fd3,#3d6,#3cf,#63f,#f3c,#f33)}
+.sw.custom input{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);opacity:0;cursor:pointer;border:0;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:40px;padding:0 12px 0 6px;border-radius:20px;border:2px solid var(--line);background:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;font:14px "Gowun Dodum";color:var(--ink)}
+.chips button svg{width:26px;height:26px;border-radius:50%}
+.chips button[aria-pressed=true]{border-color:var(--red);background:#fff2f3}
+.drawwrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}
+#pad{width:100%;max-width:320px;aspect-ratio:1;border-radius:12px;touch-action:none;cursor:crosshair;background:#fff;box-shadow:0 0 0 2px var(--line);image-rendering:pixelated}
+.tools{display:flex;flex-direction:column;gap:6px}
+.tool{min-height:40px;min-width:76px;border:2px solid var(--line);background:#fff;border-radius:12px;cursor:pointer;font:14px "Gowun Dodum";color:var(--ink);padding:0 10px}
+.tool[aria-pressed=true]{border-color:var(--red);background:#fff2f3}
+.tpl{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tpl .tool{min-width:0}
 label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
-input,textarea{width:100%;font:16px "Gowun Dodum",sans-serif;border:2px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);background:#fff}
-textarea{min-height:96px;resize:vertical}
+label output{color:var(--ink);float:right}
+input[type=text],input:not([type]),textarea{width:100%;font:16px "Gowun Dodum",sans-serif;border:2px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);background:#fff}
+textarea{min-height:90px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--red);height:32px}
+.check{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:15px;cursor:pointer;min-height:44px;margin:4px 0 0}
+.check input{width:22px;height:22px;accent-color:var(--red)}
 input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
 .len{text-align:right;font-size:12px;color:var(--muted)}
 .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
@@ -62,22 +92,24 @@ input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--gold);ou
 .msg.ok{color:#1f7a4d}
 .mine{list-style:none;padding:0;margin:8px 0 0}
 .mine li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.mine li svg{width:30px;height:30px;flex:none;background:#1f6c45;border-radius:8px}
 .mine li span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mine button{border:0;background:none;color:var(--red);cursor:pointer;font:14px "Gowun Dodum";min-height:36px}
-.demo{background:var(--gold);color:var(--ink);padding:8px 14px;border-radius:12px;font-size:14px;margin-top:12px;display:inline-block}
-.loadnote{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);font-size:14px;color:#cfe3da;background:#0007;padding:6px 12px;border-radius:10px}
 footer{text-align:center;color:#9fbcb0;font-size:13px;padding:0 16px 28px}
-@media(max-width:820px){main{grid-template-columns:minmax(0,1fr)}.stage{max-height:64vh;max-width:480px}}
+[hidden]{display:none!important}
+@media(max-width:820px){main{grid-template-columns:minmax(0,1fr)}.stagewrap{position:static}.stage{max-height:64vh;max-width:480px}}
+@media(max-width:420px){.maker{grid-template-columns:96px minmax(0,1fr)}.pvbox{width:96px;height:96px}.pvbox svg{width:84px;height:84px}.drawwrap{grid-template-columns:minmax(0,1fr)}.tools{flex-direction:row;flex-wrap:wrap}}
 /* 위젯 모드: 투명 배경, 트리만 */
 html.widget,html.widget body{background:transparent!important;overflow:hidden}
 html.widget header,html.widget .panel,html.widget footer,html.widget .loadnote{display:none}
 html.widget main{display:block;padding:0;max-width:none;height:100vh}
+html.widget .stagewrap{position:static}
 html.widget .stage{height:100vh;max-height:none;width:auto;aspect-ratio:200/262}
 html.widget .bubble{font-size:11px;padding:6px 8px;border-radius:10px;max-width:92%}
 html.widget .bubble b{font-size:12px}
 html.widget .bubble small{display:none}
 html.widget #tree{cursor:pointer}
-@media(prefers-reduced-motion:reduce){.orn.pop,.ghost.set{animation:none}}
+@media(prefers-reduced-motion:reduce){.orn.pop,.ghost.set,.tw{animation:none}}
 </style>
 </head>
 <body>
@@ -87,26 +119,77 @@ html.widget #tree{cursor:pointer}
   <div class="count" id="count">&nbsp;</div>
 </header>
 <main>
-  <div class="stage" id="stage">
-    <svg id="svg" viewBox="0 0 200 262" role="img" aria-label="크리스마스 트리"></svg>
-    <canvas id="snow"></canvas>
-    <div class="bubble" id="bubble" hidden></div>
-    <div class="loadnote" id="loadnote">장식을 불러오는 중…</div>
-  </div>
-  <section class="panel" aria-label="장식 걸기">
-    <div class="step">
-      <h2>1. 장식 고르기</h2>
-      <div class="types" id="types"></div>
-      <div class="colors" id="colors"></div>
+  <div class="stagewrap">
+    <div class="stage" id="stage">
+      <svg id="svg" viewBox="0 0 200 262" role="img" aria-label="크리스마스 트리"></svg>
+      <canvas id="snow"></canvas>
+      <div class="bubble" id="bubble" hidden></div>
+      <div class="loadnote" id="loadnote">장식을 불러오는 중…</div>
     </div>
+  </div>
+  <section class="panel" aria-label="장식 만들기">
+    <div class="step">
+      <h2>1. 장식 만들기</h2>
+      <div class="maker">
+        <div class="pvbox" aria-label="미리보기"><svg id="pv" viewBox="-16 -16 32 32"></svg></div>
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" id="tabShape" aria-selected="true">모양 고르기</button>
+          <button type="button" role="tab" id="tabDraw" aria-selected="false">직접 그리기</button>
+        </div>
+      </div>
+
+      <div id="shapePane">
+        <h3>모양</h3>
+        <div class="types" id="types"></div>
+        <h3>색</h3>
+        <div class="swatches" id="c1Row"></div>
+        <h3>무늬</h3>
+        <div class="chips" id="patterns"></div>
+        <h3>보조 색 <small>무늬, 리본, 사탕 줄, 양말 목</small></h3>
+        <div class="swatches" id="c2Row"></div>
+      </div>
+
+      <div id="drawPane" hidden>
+        <h3>16×16 칸에 그려요</h3>
+        <div class="drawwrap">
+          <canvas id="pad" width="320" height="320" aria-label="그림판"></canvas>
+          <div class="tools">
+            <button type="button" class="tool" id="toolPen" aria-pressed="true">연필</button>
+            <button type="button" class="tool" id="toolErase" aria-pressed="false">지우개</button>
+            <button type="button" class="tool" id="toolFill" aria-pressed="false">채우기</button>
+            <button type="button" class="tool" id="toolMirror" aria-pressed="false">좌우 대칭</button>
+            <button type="button" class="tool" id="toolUndo">되돌리기</button>
+          </div>
+        </div>
+        <h3>물감 <small>고른 칸의 색은 무지개 버튼으로 바꿀 수 있어요</small></h3>
+        <div class="swatches" id="palRow"></div>
+        <div class="tpl">
+          <button type="button" class="tool" data-tpl="ball">방울 틀</button>
+          <button type="button" class="tool" data-tpl="heart">하트 틀</button>
+          <button type="button" class="tool" data-tpl="tree">트리 틀</button>
+          <button type="button" class="tool" data-tpl="clear">모두 지우기</button>
+        </div>
+      </div>
+
+      <h3>꾸미기</h3>
+      <label for="text">글자 새기기 <small>(3자까지, 비워도 돼요)</small></label>
+      <input id="text" maxlength="6" placeholder="예: 민, ♥, 2026" autocomplete="off">
+      <label for="size">크기 <output id="sizeOut">100%</output></label>
+      <input type="range" id="size" min="0.6" max="1.8" step="0.05" value="1">
+      <label for="rot">기울기 <output id="rotOut">0°</output></label>
+      <input type="range" id="rot" min="-45" max="45" step="1" value="0">
+      <label class="check"><input type="checkbox" id="shine"> 반짝반짝 빛나게</label>
+    </div>
+
     <div class="step">
       <h2>2. 트리를 눌러 걸 자리 정하기</h2>
       <p class="hint" id="placeHint">트리의 초록 부분을 누르면 장식이 그 자리에 놓여요.</p>
     </div>
+
     <form class="step" id="form">
       <h2>3. 쪽지 남기기</h2>
       <label for="from">보내는 사람</label>
-      <input id="from" maxlength="20" autocomplete="nickname" placeholder="이름이나 별명">
+      <input id="from" maxlength="20" autocomplete="off" placeholder="이름이나 별명">
       <label for="note">쪽지 (선택)</label>
       <textarea id="note" maxlength="200" placeholder="메리 크리스마스!"></textarea>
       <div class="len"><span id="len">0</span>/200</div>
@@ -116,6 +199,7 @@ html.widget #tree{cursor:pointer}
       </div>
       <div class="msg" id="msg" role="status"></div>
     </form>
+
     <div class="step" id="mineWrap" hidden>
       <h2 id="mineTitle">내가 건 장식</h2>
       <ul class="mine" id="mine"></ul>

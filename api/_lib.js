@@ -1,24 +1,11 @@
-// 공용 도구: Redis 연결, 응답, 검사
-import { Redis } from "@upstash/redis";
+// 공용 도구: 응답, 키, 속도 제한, 장식 검사
 import { createHash } from "node:crypto";
 
 export const TYPES = ["ball", "star", "bell", "candy", "gift", "heart", "flake", "sock"];
-export const COLORS = ["#d8323e", "#f3c34d", "#4aa3df", "#f27aa8", "#9b6bd6", "#8fd16a", "#d9dee3", "#ffffff"];
+export const PATTERNS = ["none", "stripe", "dot", "zigzag", "star", "check"];
 export const MAX_PER_PERSON = Number(process.env.MAX_PER_PERSON || 3);
-export const MAX_TOTAL = 500;
-export const KEY = "tree:ornaments"; // 해시: id → 장식 JSON, "_snow" → 함박눈 끝나는 시각(ms)
-
-let client = null;
-export function redis() {
-  if (globalThis.__treeRedis) return globalThis.__treeRedis; // 로컬 테스트용
-  if (!client) {
-    const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) throw new Error("NO_DB");
-    client = new Redis({ url, token });
-  }
-  return client;
-}
+export const MAX_TOTAL = 400;
+export const GRID = 16;
 
 export function send(res, status, body, cache = "no-store") {
   res.statusCode = status;
@@ -40,25 +27,58 @@ export function isAdmin(req) {
   return !!a && typeof k === "string" && k.length > 0 && hash(k) === hash(a);
 }
 
-export function ip(req) {
+function ip(req) {
   return String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "?").split(",")[0].trim();
 }
 
-// IP당 window초 동안 max번까지
-export async function limited(name, req, max, windowSec) {
-  const k = `tree:rl:${name}:${ip(req)}`;
-  const n = await redis().incr(k);
-  if (n === 1) await redis().expire(k, windowSec);
-  return n > max;
-}
-
-export function parse(v) {
-  if (v && typeof v === "object") return v;
-  try { return JSON.parse(v); } catch { return null; }
+// 함수 인스턴스 안에서만 세는 가벼운 속도 제한 (IP당 windowSec초에 max번)
+const hits = new Map();
+export function limited(name, req, max, windowSec) {
+  const k = name + ":" + ip(req), now = Date.now();
+  const arr = (hits.get(k) || []).filter((t) => now - t < windowSec * 1000);
+  arr.push(now);
+  hits.set(k, arr);
+  if (hits.size > 5000) hits.clear();
+  return arr.length > max;
 }
 
 export async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
-  if (typeof req.body === "string") return parse(req.body) || {};
+  if (typeof req.body === "string") { try { return JSON.parse(req.body); } catch { return {}; } }
   return {};
+}
+
+const HEX = /^#[0-9a-f]{6}$/;
+const color = (v) => (typeof v === "string" && HEX.test(v.toLowerCase()) ? v.toLowerCase() : null);
+const range = (v, lo, hi) => { const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? Math.round(n * 100) / 100 : null; };
+
+// 장식 디자인 검사 → { design } 또는 { error }
+export function checkDesign(b) {
+  const kind = b.kind === "drawing" ? "drawing" : "shape";
+  const size = range(b.size ?? 1, 0.6, 1.8), rot = range(b.rot ?? 0, -45, 45);
+  if (size === null || rot === null) return { error: "크기나 기울기 값이 올바르지 않아요." };
+  const text = typeof b.text === "string" ? b.text.trim() : "";
+  if (Array.from(text).length > 3 || /[\u0000-\u001f<>]/.test(text)) return { error: "글자는 3자까지 새길 수 있어요." };
+  const d = { kind, size, rot, text, shine: b.shine === true };
+  if (kind === "shape") {
+    if (!TYPES.includes(b.type)) return { error: "장식 모양이 올바르지 않아요." };
+    const c1 = color(b.c1), c2 = color(b.c2);
+    if (!c1 || !c2) return { error: "색이 올바르지 않아요." };
+    if (!PATTERNS.includes(b.pattern)) return { error: "무늬가 올바르지 않아요." };
+    Object.assign(d, { type: b.type, c1, c2, pattern: b.pattern });
+  } else {
+    const px = typeof b.px === "string" ? b.px : "";
+    if (px.length !== GRID * GRID || !/^[0-8]+$/.test(px) || !/[1-8]/.test(px)) return { error: "그림이 비어 있거나 올바르지 않아요." };
+    if (!Array.isArray(b.pal) || b.pal.length !== 8) return { error: "그림 팔레트가 올바르지 않아요." };
+    const pal = b.pal.map(color);
+    if (pal.some((c) => !c)) return { error: "그림 색이 올바르지 않아요." };
+    Object.assign(d, { px, pal });
+  }
+  return { design: d };
+}
+
+// 다른 사람에게 보여줄 때는 owner(비밀 키 해시)를 빼요
+export function publicItem(id, o) {
+  const { owner, ...rest } = o;
+  return { id, ...rest };
 }

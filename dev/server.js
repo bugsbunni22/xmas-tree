@@ -1,22 +1,20 @@
 // 로컬 테스트 서버: node dev/server.js  →  http://localhost:3000
-// KV_REST_API_URL이 없으면 메모리에 저장해요 (껐다 켜면 사라짐).
+// FIREBASE_SERVICE_ACCOUNT가 없으면 메모리에 저장해요 (껐다 켜면 사라짐).
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-if (!process.env.KV_REST_API_URL && !process.env.UPSTASH_REDIS_REST_URL) {
-  const h = new Map(), kv = new Map();
-  globalThis.__treeRedis = {
-    async hgetall(k) { const m = h.get(k); return m && m.size ? Object.fromEntries(m) : null; },
-    async hget(k, f) { return h.get(k)?.get(f) ?? null; },
-    async hset(k, obj) { if (!h.has(k)) h.set(k, new Map()); for (const [f, v] of Object.entries(obj)) h.get(k).set(f, v); return 1; },
-    async hdel(k, f) { return h.get(k)?.delete(f) ? 1 : 0; },
-    async incr(k) { const n = (kv.get(k) || 0) + 1; kv.set(k, n); return n; },
-    async expire(k, s) { setTimeout(() => kv.delete(k), s * 1000).unref(); return 1; }
+if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_PRIVATE_KEY && !process.env.NO_MEMORY) {
+  const doc = { orns: {}, snowUntil: 0 };
+  globalThis.__treeStore = {
+    async read() { return JSON.parse(JSON.stringify(doc)); },
+    async add(id, item, check) { const err = check(doc.orns); if (err) return err; doc.orns[id] = item; return null; },
+    async remove(id, allow) { const o = doc.orns[id]; if (!o) return "gone"; if (!allow(o)) return "denied"; delete doc.orns[id]; return "ok"; },
+    async setSnow(t) { doc.snowUntil = t; }
   };
-  console.log("메모리 저장소로 실행 중");
+  console.log("메모리 저장소로 실행 중 (FIREBASE_SERVICE_ACCOUNT가 있으면 Firestore 사용)");
 }
 const routes = { "/api/tree": "../api/tree.js", "/api/snow": "../api/snow.js" };
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".png": "image/png" };
