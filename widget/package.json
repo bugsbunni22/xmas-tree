@@ -1,0 +1,31 @@
+{
+  "name": "bongo-tree-widget",
+  "productName": "TreeWidget",
+  "version": "1.0.0",
+  "description": "모니터 구석에 떠 있는 크리스마스 트리 위젯",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^45.5.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "bongo.tree.widget",
+    "productName": "TreeWidget",
+    "win": {
+      "icon": "icon.png",
+      "target": "portable"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "setup-preload.js",
+      "setup.html",
+      "icon.png",
+      "tray.png"
+    ]
+  }
+}
