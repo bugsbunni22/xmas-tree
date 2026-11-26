@@ -1,5 +1,5 @@
 // 공용 도구: 응답, 키, 속도 제한, 장식 검사
-import { createHash } from "node:crypto";
+import { createHash, scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
 
 export const TYPES = ["ball", "star", "bell", "candy", "gift", "heart", "flake", "sock"];
 export const PATTERNS = ["none", "stripe", "dot", "zigzag", "star", "check"];
@@ -107,7 +107,31 @@ export function queryParam(req, name) {
 export function isTreeOwner(req, tree) {
   if (isAdmin(req)) return true;
   const k = req.headers["x-tree-owner"];
-  return typeof k === "string" && k.length >= 16 && k.length <= 100 && !!tree.owner && hash(k) === tree.owner;
+  if (typeof k !== "string" || k.length < 16 || k.length > 100) return false;
+  const h = hash(k);
+  return (!!tree.owner && h === tree.owner) || (Array.isArray(tree.owners) && tree.owners.includes(h));
+}
+
+// 트리 이름으로 찾을 때 쓰는 키: 앞뒤 공백·연속 공백·대소문자·한글 조합 방식 차이를 무시
+export const titleKey = (t) => String(t || "").normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase();
+
+// 트리 비밀번호: 4~64자. 원문은 저장하지 않고 scrypt 해시만 저장해요.
+export function checkPassword(v) {
+  const p = typeof v === "string" ? v.normalize("NFC") : "";
+  const n = Array.from(p).length;
+  if (n < 4 || n > 64 || /[\u0000-\u001f]/.test(p)) return null;
+  return p;
+}
+const SCRYPT = { N: 16384, r: 8, p: 1 };
+export function hashPassword(pw) {
+  const salt = randomBytes(16);
+  return `s1$${salt.toString("hex")}$${scryptSync(pw, salt, 32, SCRYPT).toString("hex")}`;
+}
+export function verifyPassword(pw, stored) {
+  if (typeof stored !== "string" || !stored.startsWith("s1$")) return false;
+  const [, salt, h] = stored.split("$");
+  const want = Buffer.from(h || "", "hex"), got = scryptSync(pw, Buffer.from(salt || "", "hex"), 32, SCRYPT);
+  return want.length === got.length && timingSafeEqual(want, got);
 }
 
 export function checkTitle(v) {

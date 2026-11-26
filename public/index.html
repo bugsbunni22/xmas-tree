@@ -54,6 +54,14 @@ header{padding:clamp(20px,3vw,40px) max(5vw,16px) 0;max-width:1240px;margin:0 au
 .btn.danger{background:#b3261e;color:#fff;flex:0 0 auto}
 .dangerzone{border:2px solid #f3c2bf}
 .claim{border:2px solid #f3dc9a;background:#fff8e6}
+.pwrow{display:flex;gap:8px}
+.pwrow input{flex:1}
+.pwrow .tool{flex:none;min-width:64px}
+.askcreate{margin-top:14px;padding:14px;border-radius:14px;background:#fff8e6;border:2px solid #f3dc9a}
+.askcreate p{margin:0 0 10px;font-size:15px}
+.askcreate .btn{margin-top:0}
+#mPw.need{border:2px solid #f3dc9a;background:#fff8e6}
+label small{color:var(--muted);font-size:12px}
 .claim .btn{flex:0 0 auto}
 .arow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
 .arow h2{margin:0}
@@ -149,7 +157,7 @@ main{max-width:1240px;margin:0 auto;padding:20px max(5vw,16px) 48px;display:grid
 .tpl .tool{min-width:0}
 label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
 label output{color:var(--ink);float:right}
-input[type=text],input:not([type]),textarea{width:100%;font:16px "Gowun Dodum",sans-serif;border:2px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);background:#fff}
+input[type=text],input[type=password],input:not([type]),textarea{width:100%;font:16px "Gowun Dodum",sans-serif;border:2px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);background:#fff}
 textarea{min-height:90px;resize:vertical}
 input[type=range]{width:100%;accent-color:var(--red);height:32px}
 .check{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:15px;cursor:pointer;min-height:44px;margin:4px 0 0}
@@ -237,12 +245,17 @@ html.widget #tree{cursor:pointer}
         <div class="row"><button type="button" class="btn" id="claimYes">주인 바꾸기</button><button type="button" class="btn alt" id="claimNo">취소</button></div>
       </div>
     </section>
-    <section class="card" id="mShare">
+    <section class="card span2" id="mShare">
       <h2>친구들에게 공유</h2>
       <p class="lead" id="mShareLead">이 링크를 보내면 친구들이 장식을 걸어줄 수 있어요.</p>
       <div class="copyrow"><input id="shareUrl" readonly aria-label="공유 링크"><button type="button" class="tool" id="copyShare">복사</button></div>
       <p class="hint2">트리 위젯(Windows)에도 이 주소를 넣으면 모니터 구석에 이 트리가 떠요.</p>
       <a class="link" id="toTree" href="/">트리 보러 가기 →</a>
+    </section>
+    <section class="card" id="mPw">
+      <h2>트리 비밀번호</h2>
+      <p class="lead" id="mPwLead">시작 화면에서 트리 이름과 이 비밀번호를 넣으면 어느 기기에서든 이 트리를 열 수 있어요.</p>
+      <div class="copyrow"><input id="pwInput" type="password" maxlength="64" autocomplete="new-password" placeholder="새 비밀번호 (4자 이상)" aria-label="새 비밀번호"><button type="button" class="tool" id="pwBtn">저장</button></div>
     </section>
     <section class="card">
       <h2>트리 이름</h2>
@@ -287,20 +300,26 @@ html.widget #tree{cursor:pointer}
 </div>
 <div class="center" id="createView" hidden>
   <section class="card" aria-labelledby="createTitle">
-    <h2 id="createTitle">나도 트리 만들기</h2>
-    <p class="lead" id="createLead">이름만 정하면 바로 만들어져요. 링크를 친구들에게 보내면 친구들이 장식을 걸어줘요.</p>
+    <h2 id="createTitle">내 트리 열기</h2>
+    <p class="lead" id="createLead">트리 이름과 비밀번호를 넣으면 내 트리를 찾아 줘요. 처음이면 새로 만들 수 있어요.</p>
     <div id="myTreesWrap" hidden>
       <h3 id="myTreesHead">내 트리</h3>
       <ul class="trees" id="myTrees"></ul>
     </div>
-    <h3 id="newHead" hidden>새 트리 만들기</h3>
+    <h3 id="newHead" hidden>다른 트리 열기 · 새로 만들기</h3>
     <form id="createForm">
       <label for="newTitle">트리 이름</label>
       <input id="newTitle" maxlength="24" autocomplete="off" placeholder="예: 민지네 트리">
-      <button class="btn" id="createBtn" type="submit">트리 만들기</button>
+      <label for="newPw">비밀번호 <small>(4자 이상, 영문·숫자 추천)</small></label>
+      <div class="pwrow"><input id="newPw" type="password" maxlength="64" autocomplete="current-password" placeholder="내 트리를 찾을 때 써요"><button type="button" class="tool" id="pwShow" aria-pressed="false">보기</button></div>
+      <button class="btn" id="createBtn" type="submit">내 트리 열기</button>
       <div class="msg" id="createMsg" role="status"></div>
+      <div class="askcreate" id="askCreate" hidden>
+        <p id="askText">이 이름과 비밀번호로 된 트리가 없어요. 새로 만들까요?</p>
+        <div class="row"><button type="button" class="btn" id="askYes">새 트리 만들기</button><button type="button" class="btn alt" id="askNo">다시 입력</button></div>
+      </div>
     </form>
-    <p class="foot">로그인은 필요 없어요. 트리를 만든 이 브라우저가 주인이 되고, 다른 기기에서는 트리의 '관리 링크'로 주인이 될 수 있어요.</p>
+    <p class="foot">로그인은 필요 없어요. 이름과 비밀번호만 기억하면 폰이든 컴퓨터든 어디서나 내 트리를 열 수 있어요.</p>
   </section>
 </div>
 <nav class="stepnav" role="tablist" aria-label="단계">

@@ -70,12 +70,17 @@ function firestore() {
 }
 const ref = (t) => firestore().doc(`trees/${t}`);
 
+// 주인 확인에 쓰는 트리 정보 (장식 목록은 빼고)
+//   owner: 처음 만든 브라우저의 토큰 해시, owners: 비밀번호로 찾은 브라우저들의 토큰 해시
+const meta = (d) => ({ owner: d.owner || "", owners: Array.isArray(d.owners) ? d.owners : [], title: d.title || "", pw: d.pw || "" });
+const MAX_OWNERS = 10;
+
 const firestoreStore = {
-  // { exists, title, owner, orns, snowUntil }
+  // { exists, title, owner, owners, pw, orns, snowUntil }
   async read(t) {
     const snap = await ref(t).get();
     const d = snap.exists ? snap.data() : {};
-    return { exists: snap.exists, title: d.title || "", owner: d.owner || "", orns: d.orns || {}, snowUntil: Number(d.snowUntil) || 0 };
+    return { exists: snap.exists, ...meta(d), orns: d.orns || {}, snowUntil: Number(d.snowUntil) || 0 };
   },
   // check(tree) → 오류 문구 또는 null. 통과하면 장식 저장.
   async add(t, id, item, check) {
@@ -83,8 +88,8 @@ const firestoreStore = {
     return fs.runTransaction(async (tx) => {
       const snap = await tx.get(r);
       if (!snap.exists) return "트리를 찾지 못했어요.";
-      const d = snap.exists ? snap.data() : {};
-      const err = check({ owner: d.owner || "", orns: d.orns || {} });
+      const d = snap.data();
+      const err = check({ ...meta(d), orns: d.orns || {} });
       if (err) return err;
       tx.set(r, { orns: { [id]: item } }, { merge: true });
       return null;
@@ -98,7 +103,7 @@ const firestoreStore = {
       const d = snap.exists ? snap.data() : {};
       const item = (d.orns || {})[id];
       if (!item) return "gone";
-      if (!allow(item, { owner: d.owner || "" })) return "denied";
+      if (!allow(item, meta(d))) return "denied";
       tx.update(r, { [`orns.${id}`]: FieldValue.delete() });
       return "ok";
     });
@@ -114,7 +119,7 @@ const firestoreStore = {
   },
   // 새 트리. 이미 있으면 false
   async create(t, data) {
-    try { await ref(t).create({ ...data, orns: {}, snowUntil: 0 }); return true; }
+    try { await ref(t).create({ ...data, owners: [], orns: {}, snowUntil: 0 }); return true; }
     catch (e) { if (e.code === 6 || /ALREADY_EXISTS/.test(String(e.message))) return false; throw e; }
   },
   // 관리자용: 모든 트리 요약 (트리 수만큼 읽기가 들어가요)
@@ -122,36 +127,62 @@ const firestoreStore = {
     const snap = await firestore().collection("trees").get();
     return snap.docs.map((d) => summarize(d.id, d.data()));
   },
+  // 이름으로 찾기: 이름이 같은 트리들의 { id, title, pw } (비밀번호 확인은 호출한 쪽에서)
+  async findByTitle(titleKey) {
+    const snap = await firestore().collection("trees").where("titleKey", "==", titleKey).limit(20).get();
+    return snap.docs.map((d) => ({ id: d.id, title: d.data().title || "", pw: d.data().pw || "", createdAt: Number(d.data().createdAt) || 0 }));
+  },
+  // 비밀번호로 찾은 브라우저를 주인으로 추가 (최근 10개까지)
+  async addOwner(t, ownerHash) {
+    const fs = firestore(), r = ref(t);
+    return fs.runTransaction(async (tx) => {
+      const snap = await tx.get(r);
+      if (!snap.exists) return "gone";
+      const owners = meta(snap.data()).owners.filter((h) => h !== ownerHash).concat(ownerHash).slice(-MAX_OWNERS);
+      tx.update(r, { owners });
+      return "ok";
+    });
+  },
+  // 트리 비밀번호 정하기. 결과: "ok" | "gone" | "denied"
+  async setPassword(t, pwHash, titleKey, allow) {
+    const fs = firestore(), r = ref(t);
+    return fs.runTransaction(async (tx) => {
+      const snap = await tx.get(r);
+      if (!snap.exists) return "gone";
+      if (!allow(meta(snap.data()))) return "denied";
+      tx.update(r, { pw: pwHash, titleKey });
+      return "ok";
+    });
+  },
   // allow(tree) → true면 트리 통째로 삭제. 결과: "ok" | "gone" | "denied"
   async removeTree(t, allow) {
     const fs = firestore(), r = ref(t);
     return fs.runTransaction(async (tx) => {
       const snap = await tx.get(r);
       if (!snap.exists) return "gone";
-      if (!allow({ owner: snap.data().owner || "" })) return "denied";
+      if (!allow(meta(snap.data()))) return "denied";
       tx.delete(r);
       return "ok";
     });
   },
-  // 주인 다시 정하기 (관리자). 예전 주인 토큰·관리 링크는 더 이상 안 돼요. 결과: "ok" | "gone"
+  // 주인 다시 정하기 (관리자). 예전 주인 토큰·관리 링크·비밀번호로 찾은 브라우저 모두 더 이상 안 돼요. 결과: "ok" | "gone"
   async setOwner(t, owner) {
     const fs = firestore(), r = ref(t);
     return fs.runTransaction(async (tx) => {
       const snap = await tx.get(r);
       if (!snap.exists) return "gone";
-      tx.update(r, { owner });
+      tx.update(r, { owner, owners: [] });
       return "ok";
     });
   },
   // allow(tree) → true면 이름 바꾸기. 결과: "ok" | "gone" | "denied"
-  async rename(t, title, allow) {
+  async rename(t, title, titleKey, allow) {
     const fs = firestore(), r = ref(t);
     return fs.runTransaction(async (tx) => {
       const snap = await tx.get(r);
       if (!snap.exists) return "gone";
-      const d = snap.exists ? snap.data() : {};
-      if (!allow({ owner: d.owner || "" })) return "denied";
-      tx.set(r, { title }, { merge: true });
+      if (!allow(meta(snap.data()))) return "denied";
+      tx.update(r, { title, titleKey });
       return "ok";
     });
   }
@@ -160,7 +191,7 @@ const firestoreStore = {
 export function summarize(id, d) {
   const orns = Object.values(d.orns || {});
   return {
-    id, title: d.title || "", count: orns.length,
+    id, title: d.title || "", count: orns.length, hasPassword: !!d.pw,
     notes: orns.filter((o) => o && o.note).length,
     createdAt: Number(d.createdAt) || 0,
     lastAt: orns.reduce((m, o) => Math.max(m, Number(o && o.at) || 0), 0)

@@ -11,7 +11,7 @@ The interface is in Korean.
   - Or draw your own ornament on a 16×16 pixel canvas.
   - Every ornament can have engraved text (up to 3 characters), a size, a rotation, and a shine effect.
 - **Notes**: Leave a note with each ornament. Hover over or tap an ornament to read its note.
-- **Your own tree**: Anyone can create a tree and share its link. No sign-up needed.
+- **Your own tree**: Anyone can create a tree with just a name and a password, and open it again from any device. No sign-up needed.
 - **Snow**: Let it snow on the tree for a minute.
 - **Desktop widget**: A transparent, always-on-top tree for Windows that updates live.
 
@@ -25,13 +25,15 @@ The interface is in Korean.
 
 ## Creating your own tree
 
-- Press **나도 트리 만들기** (Make my own tree) and give your tree a name.
-- Share the link with friends so they can decorate it.
-- The browser you created the tree in becomes its owner. As the owner, you can:
+- On the start page, enter a tree name and a password, then press **내 트리 열기** (Open my tree).
+- If no tree has that name and password, you'll be asked whether to create a new one.
+- Share your tree's link with friends so they can decorate it.
+- To open your tree on another device, enter the same name and password on the start page.
+- As the owner, open **트리 관리** (Manage tree) to:
   - copy the share link
-  - rename the tree
+  - change the tree's name or password
   - remove any ornament
-- To manage the tree from another device, open its **manage link** there. Keep this link to yourself.
+  - delete the tree
 
 ## Desktop widget (Windows)
 

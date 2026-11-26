@@ -7,18 +7,22 @@ import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_PRIVATE_KEY && !process.env.NO_MEMORY) {
-  const trees = new Map([["main", { title: "", owner: "", orns: {}, snowUntil: 0 }]]);
+  const trees = new Map([["main", { title: "", owner: "", owners: [], orns: {}, snowUntil: 0 }]]); // 예전 첫 트리 흉내
   const get = (t) => trees.get(t);
+  const meta = (d) => ({ owner: d.owner || "", owners: d.owners || [], title: d.title || "", pw: d.pw || "" });
   globalThis.__treeStore = {
-    async read(t) { const d = get(t); return d ? { exists: true, ...JSON.parse(JSON.stringify(d)) } : { exists: false, title: "", owner: "", orns: {}, snowUntil: 0 }; },
-    async add(t, id, item, check) { const d = get(t); if (!d) return "트리를 찾지 못했어요."; const err = check(d); if (err) return err; d.orns[id] = item; return null; },
-    async remove(t, id, allow) { const d = get(t); const o = d && d.orns[id]; if (!o) return "gone"; if (!allow(o, d)) return "denied"; delete d.orns[id]; return "ok"; },
+    async read(t) { const d = get(t); return d ? { exists: true, ...JSON.parse(JSON.stringify({ ...meta(d), orns: d.orns, snowUntil: d.snowUntil })) } : { exists: false, ...meta({}), orns: {}, snowUntil: 0 }; },
+    async add(t, id, item, check) { const d = get(t); if (!d) return "트리를 찾지 못했어요."; const err = check({ ...meta(d), orns: d.orns }); if (err) return err; d.orns[id] = item; return null; },
+    async remove(t, id, allow) { const d = get(t); const o = d && d.orns[id]; if (!o) return "gone"; if (!allow(o, meta(d))) return "denied"; delete d.orns[id]; return "ok"; },
     async setSnow(t, u) { const d = get(t); if (!d) return false; d.snowUntil = u; return true; },
-    async create(t, data) { if (trees.has(t)) return false; trees.set(t, { ...data, orns: {}, snowUntil: 0 }); return true; },
-    async rename(t, title, allow) { const d = get(t); if (!d) return "gone"; if (!allow(d)) return "denied"; d.title = title; return "ok"; },
-    async setOwner(t, owner) { const d = get(t); if (!d) return "gone"; d.owner = owner; return "ok"; },
+    async create(t, data) { if (trees.has(t)) return false; trees.set(t, { ...data, owners: [], orns: {}, snowUntil: 0 }); return true; },
+    async findByTitle(k) { return [...trees].filter(([, d]) => d.titleKey === k).map(([id, d]) => ({ id, title: d.title, pw: d.pw || "", createdAt: d.createdAt || 0 })); },
+    async addOwner(t, h) { const d = get(t); if (!d) return "gone"; d.owners = (d.owners || []).filter((x) => x !== h).concat(h).slice(-10); return "ok"; },
+    async setPassword(t, pw, k, allow) { const d = get(t); if (!d) return "gone"; if (!allow(meta(d))) return "denied"; d.pw = pw; d.titleKey = k; return "ok"; },
+    async rename(t, title, k, allow) { const d = get(t); if (!d) return "gone"; if (!allow(meta(d))) return "denied"; d.title = title; d.titleKey = k; return "ok"; },
+    async setOwner(t, owner) { const d = get(t); if (!d) return "gone"; d.owner = owner; d.owners = []; return "ok"; },
     async list() { const { summarize } = await import("../api/_store.js"); return [...trees].map(([id, d]) => summarize(id, d)); },
-    async removeTree(t, allow) { const d = get(t); if (!d) return "gone"; if (!allow(d)) return "denied"; trees.delete(t); return "ok"; }
+    async removeTree(t, allow) { const d = get(t); if (!d) return "gone"; if (!allow(meta(d))) return "denied"; trees.delete(t); return "ok"; }
   };
   console.log("메모리 저장소로 실행 중 (FIREBASE_SERVICE_ACCOUNT가 있으면 Firestore 사용)");
 }

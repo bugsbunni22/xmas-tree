@@ -748,6 +748,14 @@ async function setupManage() {
     catch (e) { toast(e.message); }
     finally { $("renameBtn").disabled = false; }
   };
+  $("pwBtn").onclick = async () => {
+    const p = $("pwInput").value;
+    if (Array.from(p).length < 4) return toast("비밀번호를 4자 이상 적어주세요.");
+    $("pwBtn").disabled = true;
+    try { await call("PATCH", "/api/trees" + Q, { password: p }); $("pwInput").value = ""; setPwState(true); toast("비밀번호를 저장했어요.", true); }
+    catch (e) { toast(e.message); }
+    finally { $("pwBtn").disabled = false; }
+  };
   $("delTree").onclick = () => { $("delTree").hidden = true; $("delConfirm").hidden = false; };
   $("delNo").onclick = () => { $("delTree").hidden = false; $("delConfirm").hidden = true; };
   $("delYes").onclick = async () => {
@@ -769,6 +777,7 @@ async function loadManage() {
   }
   treeTitle = ""; applyTitle(d.title);
   $("title").textContent = (d.title || "트리") + " 관리";
+  setPwState(!!d.hasPassword);
   const list = (Array.isArray(d.items) ? d.items : []).map(cleanItem).filter(Boolean).sort((a, b) => b.at - a.at);
   $("subtitle").textContent = `장식 ${list.length}개 · 쪽지 ${list.filter((o) => o.note).length}개`;
   $("mOrnTitle").textContent = `걸린 장식 ${list.length}개`;
@@ -794,6 +803,14 @@ async function loadManage() {
     li.append(info, b);
     ul.append(li);
   }
+}
+
+function setPwState(has) {
+  $("mPw").classList.toggle("need", !has);
+  $("mPwLead").textContent = has
+    ? "비밀번호가 정해져 있어요. 시작 화면에서 트리 이름과 비밀번호를 넣으면 어느 기기에서든 이 트리를 열 수 있어요."
+    : "아직 비밀번호가 없어요. 정해 두면 시작 화면에서 트리 이름과 비밀번호로 어느 기기에서든 이 트리를 열 수 있어요.";
+  $("pwInput").placeholder = has ? "새 비밀번호로 바꾸기 (4자 이상)" : "비밀번호 정하기 (4자 이상)";
 }
 
 /* ---------- 관리자 페이지 (/admin) ---------- */
@@ -884,7 +901,7 @@ function setupCreate() {
   if (ADMIN) $("headBtns").append(headLink("관리자", "/admin"));
   if (has) {
     $("createTitle").textContent = "내 트리";
-    $("createLead").textContent = "누르면 내 트리로 가요.";
+    $("createLead").textContent = "누르면 내 트리로 가요. 다른 기기에서 만든 트리는 이름과 비밀번호로 열 수 있어요.";
     $("myTreesHead").hidden = true;
     $("newHead").hidden = false;
   }
@@ -896,26 +913,54 @@ function showNotFound() {
   showPage("createView", "트리를 찾지 못했어요", "주소가 잘못됐거나 없어진 트리예요.");
   $("headBtns").textContent = "";
   $("badge").hidden = true;
-  $("createTitle").textContent = "내 트리 만들기";
-  $("createLead").textContent = "대신 나만의 트리를 만들어 볼까요? 이름만 정하면 바로 만들어져요.";
+  $("createTitle").textContent = "내 트리 열기";
+  $("createLead").textContent = "트리 이름과 비밀번호로 내 트리를 찾거나, 새로 만들 수 있어요.";
   renderMyTrees();
   if (!showNotFound.bound) { showNotFound.bound = true; setupCreateForm(); }
 }
 function setupCreateForm() {
   const msg = (t) => { $("createMsg").textContent = t; };
+  const pw = $("newPw"), btn = $("createBtn"), ask = $("askCreate");
+  const read = () => ({ title: $("newTitle").value.trim(), password: pw.value });
+  const reset = () => { ask.hidden = true; btn.hidden = false; };
+  $("pwShow").onclick = () => {
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    $("pwShow").textContent = show ? "숨기기" : "보기";
+    $("pwShow").setAttribute("aria-pressed", show);
+  };
+  $("newTitle").addEventListener("input", reset);
+  pw.addEventListener("input", reset);
+  const keep = (list) => { for (const t of list) owners[t.id] = { token: t.ownerToken, title: t.title }; saveOwners(); };
   $("createForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const title = $("newTitle").value.trim();
+    const { title, password } = read();
     if (!title) { $("newTitle").focus(); return msg("트리 이름을 적어주세요."); }
-    $("createBtn").disabled = true;
+    if (Array.from(password).length < 4) { pw.focus(); return msg("비밀번호를 4자 이상 적어주세요."); }
+    msg(""); btn.disabled = true;
     try {
-      const d = await call("POST", "/api/trees", { title });
-      owners[d.id] = { token: d.ownerToken, title: d.title };
-      saveOwners();
+      const d = await call("POST", "/api/trees?action=find", { title, password });
+      keep(d.trees);
+      location.href = treePath(d.trees[0].id);
+    } catch (err) {
+      btn.disabled = false;
+      if (err.status === 404) {
+        $("askText").textContent = `'${title}' 이름과 이 비밀번호로 된 트리가 없어요. 새로 만들까요?`;
+        ask.hidden = false; btn.hidden = true;
+      } else msg(err.message);
+    }
+  });
+  $("askNo").onclick = () => { reset(); pw.focus(); pw.select(); };
+  $("askYes").onclick = async () => {
+    const { title, password } = read();
+    $("askYes").disabled = true;
+    try {
+      const d = await call("POST", "/api/trees", { title, password });
+      keep([d]);
       try { sessionStorage.setItem("tree-created", d.id); } catch (_) {}
       location.href = managePath(d.id);
-    } catch (err) { msg(err.message); $("createBtn").disabled = false; }
-  });
+    } catch (err) { msg(err.message); $("askYes").disabled = false; }
+  };
 }
 
 if (WIDGET && !ROUTE) {

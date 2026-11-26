@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       const tree = await store().read(t);
       if (!tree.exists) return send(res, 404, { error: "트리를 찾지 못했어요. 주소를 다시 확인해주세요." }, "public, s-maxage=10");
       const items = Object.entries(tree.orns).map(([id, o]) => publicItem(id, o)).sort((a, b) => a.at - b.at);
-      return send(res, 200, { tree: t, title: tree.title, items, snowUntil: tree.snowUntil, now: Date.now() }, "public, s-maxage=10, stale-while-revalidate=20");
+      return send(res, 200, { tree: t, title: tree.title, hasPassword: !!tree.pw, items, snowUntil: tree.snowUntil, now: Date.now() }, "public, s-maxage=10, stale-while-revalidate=20");
     }
 
     if (req.method === "POST") {
