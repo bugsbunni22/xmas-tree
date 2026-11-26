@@ -577,7 +577,7 @@ const loadTimer = setTimeout(() => { $("loadnote").textContent = "연결이 늦�
 async function call(method, path, body) {
   const r = await fetch(path, {
     method, cache: "no-store",
-    headers: { "Content-Type": "application/json", "x-tree-key": myKey, ...(ADMIN ? { "x-tree-admin": ADMIN } : {}), ...(OWNER_TOKEN ? { "x-tree-owner": OWNER_TOKEN } : {}) },
+    headers: { "Content-Type": "application/json", "x-tree-key": myKey, ...(ADMIN ? { "x-tree-admin": encodeURIComponent(ADMIN) } : {}), ...(OWNER_TOKEN ? { "x-tree-owner": OWNER_TOKEN } : {}) },
     body: body ? JSON.stringify(body) : undefined
   });
   let data = {};
@@ -789,7 +789,7 @@ function setupAdmin() {
   $("headBtns").append(headLink("첫 트리", "/"));
   $("aForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const k = $("aKey").value.trim();
+    const k = $("aKey").value.normalize("NFC").trim();
     if (!k) return;
     store.set("tree-admin", k);
     location.reload();
@@ -803,7 +803,11 @@ let adminTrees = [];
 async function loadAdmin() {
   try { adminTrees = (await call("GET", "/api/trees")).trees || []; }
   catch (e) {
-    if (e.status === 403) { store.del("tree-admin"); $("aList").hidden = true; $("aLogin").hidden = false; $("aMsg").textContent = "관리자 키가 맞지 않아요."; return; }
+    if (e.status === 403 || e.status === 503) {
+      store.del("tree-admin"); $("aList").hidden = true; $("aLogin").hidden = false;
+      $("aMsg").textContent = e.status === 403 ? "관리자 키가 맞지 않아요. Vercel에서 값을 바꿨다면 Redeploy까지 했는지 확인해 주세요." : e.message;
+      return;
+    }
     return toast(e.message);
   }
   renderAdmin();

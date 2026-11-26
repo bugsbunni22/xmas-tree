@@ -21,10 +21,17 @@ export function clientKey(req) {
   return typeof k === "string" && k.length >= 16 && k.length <= 100 ? k : null;
 }
 
+// 관리자 키: 앞뒤 공백·줄바꿈은 무시하고, 한글은 같은 형태(NFC)로 맞춰서 비교해요.
+// 브라우저는 헤더에 한글을 못 실어서 encodeURIComponent 로 보내요.
+const normKey = (v) => String(v ?? "").normalize("NFC").trim();
+export const adminConfigured = () => !!normKey(process.env.ADMIN_KEY);
 export function isAdmin(req) {
-  const a = process.env.ADMIN_KEY;
-  const k = req.headers["x-tree-admin"];
-  return !!a && typeof k === "string" && k.length > 0 && hash(k) === hash(a);
+  const a = normKey(process.env.ADMIN_KEY);
+  let k = req.headers["x-tree-admin"];
+  if (!a || typeof k !== "string" || !k) return false;
+  try { k = decodeURIComponent(k); } catch {}
+  k = normKey(k);
+  return k.length > 0 && hash(k) === hash(a);
 }
 
 function ip(req) {

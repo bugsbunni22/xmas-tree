@@ -4,7 +4,7 @@
 // DELETE /api/trees?t=트리     트리 삭제 (주인 토큰 또는 관리자, 첫 트리 main 은 지울 수 없어요)
 import { randomBytes } from "node:crypto";
 import { store, dbErrorMessage, MAIN } from "./_store.js";
-import { send, hash, limited, readBody, checkTitle, treeId, isTreeOwner, isAdmin } from "./_lib.js";
+import { send, hash, limited, readBody, checkTitle, treeId, isTreeOwner, isAdmin, adminConfigured } from "./_lib.js";
 
 const ALPHA = "abcdefghjkmnpqrstuvwxyz23456789"; // 헷갈리는 글자(i, l, o, 0, 1) 빼기
 const newId = () => Array.from(randomBytes(8), (b) => ALPHA[b % ALPHA.length]).join("");
@@ -12,7 +12,8 @@ const newId = () => Array.from(randomBytes(8), (b) => ALPHA[b % ALPHA.length]).j
 export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
-      if (!isAdmin(req)) return send(res, 403, { error: "관리자만 볼 수 있어요." });
+      if (!adminConfigured()) return send(res, 503, { error: "서버에 ADMIN_KEY가 아직 없어요. Vercel 환경 변수에 ADMIN_KEY를 저장하고 Redeploy 해주세요." });
+      if (!isAdmin(req)) return send(res, 403, { error: "관리자 키가 맞지 않아요." });
       const trees = (await store().list()).sort((a, b) => (b.lastAt || b.createdAt) - (a.lastAt || a.createdAt));
       return send(res, 200, { trees });
     }
