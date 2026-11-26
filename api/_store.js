@@ -117,6 +117,22 @@ const firestoreStore = {
     try { await ref(t).create({ ...data, orns: {}, snowUntil: 0 }); return true; }
     catch (e) { if (e.code === 6 || /ALREADY_EXISTS/.test(String(e.message))) return false; throw e; }
   },
+  // 관리자용: 모든 트리 요약 (트리 수만큼 읽기가 들어가요)
+  async list() {
+    const snap = await firestore().collection("trees").get();
+    return snap.docs.map((d) => summarize(d.id, d.data()));
+  },
+  // allow(tree) → true면 트리 통째로 삭제. 결과: "ok" | "gone" | "denied"
+  async removeTree(t, allow) {
+    const fs = firestore(), r = ref(t);
+    return fs.runTransaction(async (tx) => {
+      const snap = await tx.get(r);
+      if (!snap.exists) return "gone";
+      if (!allow({ owner: snap.data().owner || "" })) return "denied";
+      tx.delete(r);
+      return "ok";
+    });
+  },
   // allow(tree) → true면 이름 바꾸기. 결과: "ok" | "gone" | "denied"
   async rename(t, title, allow) {
     const fs = firestore(), r = ref(t);
@@ -130,6 +146,16 @@ const firestoreStore = {
     });
   }
 };
+
+export function summarize(id, d) {
+  const orns = Object.values(d.orns || {});
+  return {
+    id, title: d.title || "", count: orns.length,
+    notes: orns.filter((o) => o && o.note).length,
+    createdAt: Number(d.createdAt) || 0,
+    lastAt: orns.reduce((m, o) => Math.max(m, Number(o && o.at) || 0), 0)
+  };
+}
 
 export function store() {
   return globalThis.__treeStore || firestoreStore; // 로컬 테스트 때는 메모리 저장소

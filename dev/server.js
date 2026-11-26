@@ -15,7 +15,9 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_PRIVATE_KEY &
     async remove(t, id, allow) { const d = get(t); const o = d && d.orns[id]; if (!o) return "gone"; if (!allow(o, d)) return "denied"; delete d.orns[id]; return "ok"; },
     async setSnow(t, u) { const d = get(t); if (!d) return false; d.snowUntil = u; return true; },
     async create(t, data) { if (trees.has(t)) return false; trees.set(t, { ...data, orns: {}, snowUntil: 0 }); return true; },
-    async rename(t, title, allow) { const d = get(t); if (!d) return "gone"; if (!allow(d)) return "denied"; d.title = title; return "ok"; }
+    async rename(t, title, allow) { const d = get(t); if (!d) return "gone"; if (!allow(d)) return "denied"; d.title = title; return "ok"; },
+    async list() { const { summarize } = await import("../api/_store.js"); return [...trees].map(([id, d]) => summarize(id, d)); },
+    async removeTree(t, allow) { const d = get(t); if (!d) return "gone"; if (!allow(d)) return "denied"; trees.delete(t); return "ok"; }
   };
   console.log("메모리 저장소로 실행 중 (FIREBASE_SERVICE_ACCOUNT가 있으면 Firestore 사용)");
 }
@@ -32,7 +34,7 @@ http.createServer(async (req, res) => {
     const mod = await import(routes[url.pathname]);
     return mod.default(req, res);
   }
-  const page = url.pathname === "/" || url.pathname === "/new" || /^\/t\/[^/]+$/.test(url.pathname); // vercel.json rewrites와 같게
+  const page = ["/", "/new", "/admin", "/manage"].includes(url.pathname) || /^\/t\/[^/]+(\/manage)?$/.test(url.pathname); // vercel.json rewrites와 같게
   const file = path.join(root, "public", page ? "index.html" : url.pathname);
   if (!file.startsWith(path.join(root, "public")) || !fs.existsSync(file)) { res.statusCode = 404; return res.end("not found"); }
   res.setHeader("Content-Type", types[path.extname(file)] || "application/octet-stream");

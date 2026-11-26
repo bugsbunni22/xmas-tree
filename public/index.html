@@ -19,9 +19,53 @@
 :root{--night:#0c241c;--night2:#123b2d;--snow:#f7fbff;--ink:#13241e;--muted:#5d6f68;--red:#d8323e;--gold:#f3c34d;--line:#dfe6e2;--soft:#eef4f1;color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0}
+html{background:var(--night)}
 body{background:radial-gradient(120% 80% at 30% 0%,#1b4a39 0%,var(--night2) 35%,var(--night) 75%) fixed;color:var(--snow);font:16px/1.55 "Gowun Dodum",system-ui,sans-serif;overflow-x:clip;min-height:100vh}
 h1,h2,h3,.btn,.tabs button{font-family:"Jua","Gowun Dodum",sans-serif;font-weight:400}
 header{padding:clamp(20px,3vw,40px) max(5vw,16px) 0;max-width:1240px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.headtxt{min-width:0}
+.titlerow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{flex:none;display:inline-flex;align-items:center;min-height:30px;padding:0 12px;border-radius:15px;background:#ffffff1f;color:#e5f1ec;font:15px Jua,sans-serif;white-space:nowrap}
+.badge.is-mine{background:var(--gold);color:var(--ink)}
+.badge.is-admin{background:#ffffff;color:var(--red)}
+.headbtns{flex:none;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.mk.solid{background:var(--gold);color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:20;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;box-shadow:0 10px 30px #0006;font-size:15px;max-width:min(90vw,420px)}
+.toast.ok{background:#1f7a4d}
+.pagewrap{max-width:1000px;margin:0 auto;padding:20px max(5vw,16px) 48px}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.mgrid .span2{grid-column:1/-1}
+.card.wide{width:100%}
+.pagewrap .card{width:auto}
+.pagewrap .card h2{font-size:22px}
+.card .lead{font-size:14px;margin:0 0 12px}
+.card.new{box-shadow:0 0 0 4px var(--gold),0 20px 50px #0007}
+.hint2{font-size:13px;color:var(--muted);margin:4px 0 10px}
+.link{color:var(--red);font:16px Jua,sans-serif;text-decoration:none}
+.linkbtn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;width:auto!important}
+.mine.big li{align-items:flex-start;padding:12px 0}
+.mine.big li svg{width:40px;height:40px}
+.mine .info{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.mine .info b{font:16px Jua,sans-serif;color:var(--ink)}
+.mine .info span{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink)}
+.mine .info small{color:var(--muted);font-size:12px}
+.empty{color:var(--muted);font-size:14px}
+.warn{color:#9a5b00}
+.btn.danger{background:#b3261e;color:#fff;flex:0 0 auto}
+.dangerzone{border:2px solid #f3c2bf}
+.arow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.arow h2{margin:0}
+#aSearch{margin-bottom:8px}
+.trees.admin li{display:flex;align-items:center;gap:10px;padding:10px 0}
+.trees.admin .info{flex:1;display:flex;flex-direction:column;min-width:0}
+.trees.admin .info a{display:block;padding:0;min-height:0;font:17px Jua,sans-serif}
+.trees.admin .info small{color:var(--muted);font-size:13px}
+.trees.admin .acts{display:flex;gap:6px;flex:none}
+.trees.admin .acts a.tool{display:inline-flex;justify-content:center;align-items:center;padding:0 10px;min-height:40px}
+.tool.danger{color:#b3261e;border-color:#f3c2bf}
+a.tool{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+@media(min-width:821px){html.page body{height:auto;min-height:100vh;overflow:visible;display:block}}
+@media(max-width:700px){.mgrid{grid-template-columns:minmax(0,1fr)}.headbtns{justify-content:flex-start}}
 .mk{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:22px;border:2px solid var(--gold);color:var(--gold);text-decoration:none;font:17px Jua,sans-serif;white-space:nowrap}
 .mk:hover{background:#f3c34d1f}
 h1{font-size:clamp(32px,5vw,50px);line-height:1.05;margin:0 0 8px;text-wrap:balance}
@@ -142,7 +186,7 @@ input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--gold);ou
   .stepnav button[aria-selected=true]{background:var(--snow);color:var(--ink)}
   html:not(.widget) .mnav{display:block}
   #partHang .mnav{margin:0 0 16px}
-  body[data-step="1"] .stagewrap,body[data-step="1"] #partHang,body[data-step="1"] #ownerBox,body[data-step="2"] #partMake{display:none}
+  body[data-step="1"] .stagewrap,body[data-step="1"] #partHang,body[data-step="2"] #partMake{display:none}
   body[data-step="2"] .stage{max-width:min(440px,100%)}
 }
 [hidden]{display:none!important}
@@ -150,7 +194,7 @@ input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--gold);ou
 @media(max-width:420px){.maker{grid-template-columns:96px minmax(0,1fr)}.pvbox{width:96px;height:96px}.pvbox svg{width:84px;height:84px}.drawwrap{grid-template-columns:minmax(0,1fr)}.tools{flex-direction:row;flex-wrap:wrap}}
 /* 위젯 모드: 투명 배경, 트리만 */
 html.widget,html.widget body{background:transparent!important;overflow:hidden}
-html.widget header,html.widget #createView,html.widget .panel,html.widget footer,html.widget .loadnote{display:none}
+html.widget header,html.widget #createView,html.widget .pagewrap,html.widget .toast,html.widget .panel,html.widget footer,html.widget .loadnote{display:none}
 html.widget main{display:block;padding:0;max-width:none;height:100vh}
 html.widget .stepnav,html.widget .mnav{display:none!important}
 html.widget .stage{height:100vh;max-height:none;width:auto;aspect-ratio:200/262}
@@ -163,13 +207,70 @@ html.widget #tree{cursor:pointer}
 </head>
 <body>
 <header>
-  <div>
-    <h1 id="title">&nbsp;</h1>
+  <div class="headtxt">
+    <div class="titlerow"><h1 id="title">&nbsp;</h1><span class="badge" id="badge" hidden></span></div>
     <p class="sub" id="subtitle"></p>
     <div class="count" id="count">&nbsp;</div>
   </div>
-  <a class="mk" id="mkLink" href="/new">나도 트리 만들기</a>
+  <nav class="headbtns" id="headBtns" aria-label="바로가기"></nav>
 </header>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<div class="pagewrap" id="manageView" hidden>
+  <section class="card wide" id="mDenied" hidden>
+    <h2>트리 주인만 볼 수 있어요</h2>
+    <p class="lead">트리를 만든 브라우저에서 열거나, 주인에게 받은 관리 링크로 열어 주세요.</p>
+    <a class="btn linkbtn" id="mBack" href="/">트리로 가기</a>
+  </section>
+  <div class="mgrid" id="mPanels">
+    <section class="card" id="mShare">
+      <h2>친구들에게 공유</h2>
+      <p class="lead" id="mShareLead">이 링크를 보내면 친구들이 장식을 걸어줄 수 있어요.</p>
+      <div class="copyrow"><input id="shareUrl" readonly aria-label="공유 링크"><button type="button" class="tool" id="copyShare">복사</button></div>
+      <p class="hint2">트리 위젯(Windows)에도 이 주소를 넣으면 모니터 구석에 이 트리가 떠요.</p>
+      <a class="link" id="toTree" href="/">트리 보러 가기 →</a>
+    </section>
+    <section class="card">
+      <h2>트리 이름</h2>
+      <p class="lead">트리 맨 위에 크게 보이는 이름이에요.</p>
+      <div class="copyrow"><input id="renameInput" maxlength="24" autocomplete="off" aria-label="트리 이름"><button type="button" class="tool" id="renameBtn">바꾸기</button></div>
+    </section>
+    <section class="card span2">
+      <h2 id="mOrnTitle">걸린 장식</h2>
+      <p class="lead">이상한 장식이나 쪽지는 떼어낼 수 있어요.</p>
+      <ul class="mine big" id="mOrns"></ul>
+      <p class="empty" id="mEmpty" hidden>아직 걸린 장식이 없어요.</p>
+    </section>
+    <section class="card" id="mDevice">
+      <h2>다른 기기에서도 관리하기</h2>
+      <p class="lead warn">이 관리 링크를 연 기기도 이 트리의 주인이 돼요. 나만 갖고 있어요.</p>
+      <div class="copyrow"><input id="manageUrl" readonly aria-label="관리 링크"><button type="button" class="tool" id="copyManage">복사</button></div>
+    </section>
+    <section class="card dangerzone" id="mDanger">
+      <h2>트리 삭제</h2>
+      <p class="lead">트리와 걸린 장식, 쪽지가 모두 사라져요.</p>
+      <button type="button" class="btn danger" id="delTree">이 트리 삭제</button>
+      <div id="delConfirm" hidden>
+        <p class="warn">정말 지울까요? 되돌릴 수 없어요.</p>
+        <div class="row"><button type="button" class="btn danger" id="delYes">삭제</button><button type="button" class="btn alt" id="delNo">취소</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="pagewrap" id="adminView" hidden>
+  <section class="card wide" id="aLogin" hidden>
+    <h2>관리자 키</h2>
+    <p class="lead">Vercel에 넣어 둔 ADMIN_KEY 값을 입력하세요. 이 브라우저에 기억돼요.</p>
+    <form id="aForm" class="copyrow"><input id="aKey" type="password" autocomplete="off" aria-label="관리자 키"><button class="tool" type="submit">확인</button></form>
+    <div class="msg" id="aMsg" role="status"></div>
+  </section>
+  <section class="card wide" id="aList" hidden>
+    <div class="arow"><h2 id="aTitle">모든 트리</h2><button type="button" class="tool" id="aLogout">관리자 나가기</button></div>
+    <input id="aSearch" placeholder="이름이나 코드로 찾기" autocomplete="off" aria-label="트리 찾기">
+    <ul class="trees admin" id="aTrees"></ul>
+  </section>
+</div>
 <div class="center" id="createView" hidden>
   <section class="card" aria-labelledby="createTitle">
     <h2 id="createTitle">나도 트리 만들기</h2>
@@ -202,20 +303,6 @@ html.widget #tree{cursor:pointer}
   </div>
   <section class="panel" aria-label="장식 만들기">
    <div class="panelin">
-    <div class="step owner" id="ownerBox" hidden>
-      <h2>내 트리 관리</h2>
-      <p id="ownerNote">이 링크를 친구들에게 보내면 장식을 걸어줄 수 있어요.</p>
-      <div class="copyrow"><input id="shareUrl" readonly aria-label="공유 링크"><button type="button" class="tool" id="copyShare">복사</button></div>
-      <p>트리 위젯(Windows)에는 이 주소를 넣으면 내 모니터 구석에 이 트리가 떠요.</p>
-      <label for="renameInput">트리 이름</label>
-      <div class="copyrow"><input id="renameInput" maxlength="24" autocomplete="off"><button type="button" class="tool" id="renameBtn">바꾸기</button></div>
-      <details id="manageWrap">
-        <summary>다른 기기에서도 주인이 되려면</summary>
-        <p class="warn">아래 관리 링크를 열면 그 기기도 주인이 돼요. 장식을 뗄 수 있는 권한이니 나만 갖고 있어요.</p>
-        <div class="copyrow"><input id="manageUrl" readonly aria-label="관리 링크"><button type="button" class="tool" id="copyManage">복사</button></div>
-      </details>
-      <div class="msg" id="ownerMsg" role="status"></div>
-    </div>
     <div class="part" id="partMake">
     <div class="step">
       <h2>1. 장식 만들기</h2>

@@ -6,13 +6,18 @@ const WIDGET = params.has("widget");
 const SNOW_ON = params.get("snow") !== "0";
 const SITE_URL = location.origin + location.pathname;
 if (WIDGET) document.documentElement.classList.add("widget");
-// 주소: /  → 내 첫 트리(main), /t/코드 → 친구들 트리, /new → 트리 만들기
+// 주소: /  → 첫 트리(main), /t/코드 → 각자의 트리, 뒤에 /manage → 트리 관리
+//       /new → 트리 만들기, /admin → 관리자
 const PATH = location.pathname.replace(/\/+$/, "") || "/";
-const ROUTE = PATH.match(/^\/t\/([a-z2-9]{8})$/);
+const ROUTE = (PATH === "/" ? "" : PATH).match(/^(?:\/t\/([a-z2-9]{8}))?(\/manage)?$/);
 const CREATE = !WIDGET && PATH === "/new";
-const TREE = ROUTE ? ROUTE[1] : "main";
-const UNKNOWN = !CREATE && PATH !== "/" && !ROUTE;
+const ADMIN_PAGE = !WIDGET && PATH === "/admin";
+const TREE = ROUTE && ROUTE[1] ? ROUTE[1] : "main";
+const MANAGE = !WIDGET && !!(ROUTE && ROUTE[2]);
+const UNKNOWN = !CREATE && !ADMIN_PAGE && !ROUTE;
 const Q = "?t=" + TREE;
+const treePath = (t) => (t === "main" ? "/" : "/t/" + t);
+const managePath = (t) => (t === "main" ? "/manage" : "/t/" + t + "/manage");
 
 const TYPES = ["ball", "star", "bell", "candy", "gift", "heart", "flake", "sock"];
 const TYPE_NAMES = { ball: "방울", star: "별", bell: "종", candy: "지팡이 사탕", gift: "선물 상자", heart: "하트", flake: "눈송이", sock: "양말", drawing: "손그림" };
@@ -199,7 +204,14 @@ if (!WIDGET && location.hash.startsWith("#own=")) {
   history.replaceState(null, "", location.pathname + location.search);
 }
 const OWNER_TOKEN = WIDGET ? "" : (owners[TREE] && owners[TREE].token) || "";
-const IS_OWNER = !!OWNER_TOKEN || !!ADMIN;
+const MY_TREE = !!OWNER_TOKEN || (TREE === "main" && !!ADMIN); // 진짜 내 트리 (첫 트리 주인은 관리자)
+const IS_OWNER = MY_TREE || !!ADMIN;                            // 관리할 수 있음 (관리자는 모든 트리)
+// 내가 주인인 트리들 (이 브라우저 기준)
+function myTrees() {
+  const list = Object.entries(owners).filter(([id, o]) => /^[a-z2-9]{8}$/.test(id) && o && o.token).map(([id, o]) => ({ id, title: o.title || "내 트리" }));
+  if (ADMIN) list.unshift({ id: "main", title: "첫 트리" });
+  return list;
+}
 
 function render() {
   svg.querySelector("#orns").innerHTML = items.map((o) => {
@@ -216,8 +228,8 @@ function render() {
 
 function renderMine() {
   if (WIDGET) return;
-  const list = IS_OWNER ? items : items.filter(isMine);
-  $("mineTitle").textContent = IS_OWNER ? `트리 주인: 모든 장식 (${items.length})` : "내가 건 장식";
+  const list = items.filter(isMine);
+  $("mineTitle").textContent = "내가 건 장식";
   $("mineWrap").hidden = !list.length;
   const ul = $("mine");
   ul.textContent = "";
@@ -225,7 +237,7 @@ function renderMine() {
     const li = document.createElement("li");
     li.innerHTML = `<svg viewBox="-14 -14 28 28" aria-hidden="true">${ornSVG(o, "m" + o.id)}</svg>`;
     const s = document.createElement("span");
-    s.textContent = `${IS_OWNER ? o.from + " · " : ""}${TYPE_NAMES[o.kind === "drawing" ? "drawing" : o.type]} · ${o.note || "(쪽지 없음)"}`;
+    s.textContent = `${TYPE_NAMES[o.kind === "drawing" ? "drawing" : o.type]} · ${o.note || "(쪽지 없음)"}`;
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = "떼기";
@@ -300,7 +312,6 @@ function swatchRow(el, colors, get, set, labelOf) {
 }
 
 function setupPanel() {
-  $("subtitle").textContent = SITE.subtitle;
   stage.classList.add("placing");
 
   const types = $("types"), pats = $("patterns");
@@ -346,7 +357,6 @@ function setupPanel() {
   $("next").onclick = toHang;
   $("back").onclick = () => setStep(1);
   setStep(1);
-  setupOwner(setStep);
 
   function update() {
     const d = cleanDesign(design);
@@ -623,7 +633,7 @@ const api = {
   }
 };
 
-/* ---------- 트리 이름, 주인 메뉴 ---------- */
+/* ---------- 머리말: 트리 이름, 내 트리 / 남의 트리 표시, 바로가기 버튼 ---------- */
 let treeTitle = "", stopped = false;
 function applyTitle(t) {
   const title = t || (TREE === "main" ? SITE.title : "크리스마스 트리");
@@ -635,70 +645,229 @@ function applyTitle(t) {
   const ri = $("renameInput");
   if (ri && document.activeElement !== ri) ri.value = title;
 }
-function setupOwner(setStep) {
-  if (!IS_OWNER) return;
-  const share = location.origin + (TREE === "main" ? "/" : "/t/" + TREE);
-  const say2 = (t, ok) => { const m = $("ownerMsg"); m.textContent = t; m.classList.toggle("ok", !!ok); };
-  $("ownerBox").hidden = false;
+function headLink(text, href, solid) {
+  const a = document.createElement("a");
+  a.className = "mk" + (solid ? " solid" : "");
+  a.href = href;
+  a.textContent = text;
+  return a;
+}
+function setupHeader() {
+  const badge = $("badge"), btns = $("headBtns");
+  btns.textContent = "";
+  if (MY_TREE) { badge.textContent = "내 트리"; badge.className = "badge is-mine"; }
+  else if (ADMIN) { badge.textContent = "관리자로 보는 중"; badge.className = "badge is-admin"; }
+  else { badge.textContent = "친구 트리"; badge.className = "badge"; }
+  badge.hidden = false;
+  $("subtitle").textContent = MY_TREE ? "링크를 친구들에게 보내서 장식을 받아 보세요." : SITE.subtitle;
+  if (IS_OWNER) btns.append(headLink("트리 관리", managePath(TREE), true));
+  if (!MY_TREE) {
+    const mine = myTrees().filter((t) => t.id !== TREE);
+    if (mine.length === 1) btns.append(headLink("내 트리로 가기", treePath(mine[0].id)));
+    else if (mine.length > 1) btns.append(headLink("내 트리 보기", "/new"));
+    else btns.append(headLink("나도 트리 만들기", "/new"));
+  }
+  if (ADMIN) btns.append(headLink("관리자", "/admin"));
+}
+
+// 트리 대신 다른 화면(만들기, 관리, 관리자, 없는 트리)을 보여줄 때
+function showPage(id, title, lead) {
+  stopped = true;
+  document.documentElement.classList.add("page"); // 긴 목록도 스크롤되게
+  document.querySelector("main").hidden = true;
+  document.querySelector(".stepnav").hidden = true;
+  $("count").hidden = true;
+  for (const v of ["createView", "manageView", "adminView"]) $(v).hidden = v !== id;
+  $("title").textContent = title;
+  $("subtitle").textContent = lead;
+  document.title = title;
+}
+let toastTimer = null;
+function toast(t, ok) {
+  const el = $("toast");
+  el.textContent = t;
+  el.classList.toggle("ok", !!ok);
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 3200);
+}
+async function copyText(input) {
+  input.select();
+  try { await navigator.clipboard.writeText(input.value); toast("복사했어요!", true); }
+  catch (e) { try { document.execCommand("copy"); toast("복사했어요!", true); } catch (_) { toast("주소를 길게 눌러 직접 복사해 주세요."); } }
+}
+const dateText = (ms) => (ms ? new Date(ms).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }) : "-");
+
+/* ---------- 트리 관리 페이지 (/t/코드/manage, /manage) ---------- */
+async function setupManage() {
+  showPage("manageView", "트리 관리", "");
+  $("headBtns").textContent = "";
+  $("headBtns").append(headLink("← 트리로 가기", treePath(TREE)));
+  if (ADMIN) $("headBtns").append(headLink("관리자", "/admin"));
+  if (!IS_OWNER) {
+    $("mDenied").hidden = false;
+    $("mPanels").hidden = true;
+    $("mBack").href = treePath(TREE);
+    $("subtitle").textContent = "트리를 만든 브라우저나 관리 링크로 연 기기에서만 볼 수 있어요.";
+    return;
+  }
+  $("badge").hidden = false;
+  $("badge").textContent = MY_TREE ? "내 트리" : "관리자로 관리 중";
+  $("badge").className = "badge " + (MY_TREE ? "is-mine" : "is-admin");
+  const share = location.origin + treePath(TREE);
   $("shareUrl").value = share;
-  if (OWNER_TOKEN) $("manageUrl").value = share + "#own=" + OWNER_TOKEN; else $("manageWrap").hidden = true;
-  const copy = async (input) => {
-    input.select();
-    try { await navigator.clipboard.writeText(input.value); say2("복사했어요!", true); }
-    catch (e) { try { document.execCommand("copy"); say2("복사했어요!", true); } catch (_) { say2("주소를 길게 눌러 직접 복사해 주세요."); } }
-  };
-  $("copyShare").onclick = () => copy($("shareUrl"));
-  $("copyManage").onclick = () => copy($("manageUrl"));
-  $("renameBtn").onclick = async () => {
-    const t = $("renameInput").value.trim();
-    if (!t) return say2("트리 이름을 적어주세요.");
-    $("renameBtn").disabled = true;
-    try { const d = await call("PATCH", "/api/trees" + Q, { title: t }); treeTitle = ""; applyTitle(d.title); say2("이름을 바꿨어요. 친구들 화면엔 10초 안에 바뀌어요.", true); }
-    catch (e) { say2(e.message); }
-    finally { $("renameBtn").disabled = false; }
-  };
+  $("toTree").href = treePath(TREE);
+  $("copyShare").onclick = () => copyText($("shareUrl"));
+  if (OWNER_TOKEN) { $("manageUrl").value = location.origin + treePath(TREE) + "#own=" + OWNER_TOKEN; $("copyManage").onclick = () => copyText($("manageUrl")); }
+  else $("mDevice").hidden = true;
+  if (TREE === "main") $("mDanger").hidden = true;
+
   let justMade = false;
   try { justMade = sessionStorage.getItem("tree-created") === TREE; if (justMade) sessionStorage.removeItem("tree-created"); } catch (e) {}
-  if (justMade) {
-    $("ownerBox").classList.add("new");
-    $("ownerNote").textContent = "트리를 만들었어요! 이 링크를 친구들에게 보내면 장식을 걸어줄 수 있어요.";
-    setStep(2);
+  if (justMade) { $("mShare").classList.add("new"); $("mShareLead").textContent = "트리를 만들었어요! 이 링크를 친구들에게 보내면 장식을 걸어줄 수 있어요."; }
+
+  $("renameBtn").onclick = async () => {
+    const t = $("renameInput").value.trim();
+    if (!t) return toast("트리 이름을 적어주세요.");
+    $("renameBtn").disabled = true;
+    try { const d = await call("PATCH", "/api/trees" + Q, { title: t }); treeTitle = ""; applyTitle(d.title); $("title").textContent = d.title + " 관리"; toast("이름을 바꿨어요.", true); }
+    catch (e) { toast(e.message); }
+    finally { $("renameBtn").disabled = false; }
+  };
+  $("delTree").onclick = () => { $("delTree").hidden = true; $("delConfirm").hidden = false; };
+  $("delNo").onclick = () => { $("delTree").hidden = false; $("delConfirm").hidden = true; };
+  $("delYes").onclick = async () => {
+    $("delYes").disabled = true;
+    try {
+      await call("DELETE", "/api/trees" + Q);
+      delete owners[TREE]; saveOwners();
+      location.href = ADMIN && !MY_TREE ? "/admin" : "/new";
+    } catch (e) { toast(e.message); $("delYes").disabled = false; }
+  };
+  await loadManage();
+}
+async function loadManage() {
+  let d;
+  try { d = await call("GET", "/api/tree" + Q + "&m=" + Date.now()); }
+  catch (e) {
+    if (e.status === 404) { showNotFound(); return; }
+    return toast(e.message);
+  }
+  treeTitle = ""; applyTitle(d.title);
+  $("title").textContent = (d.title || (TREE === "main" ? SITE.title : "트리")) + " 관리";
+  const list = (Array.isArray(d.items) ? d.items : []).map(cleanItem).filter(Boolean).sort((a, b) => b.at - a.at);
+  $("subtitle").textContent = `장식 ${list.length}개 · 쪽지 ${list.filter((o) => o.note).length}개`;
+  $("mOrnTitle").textContent = `걸린 장식 ${list.length}개`;
+  $("mEmpty").hidden = list.length > 0;
+  const ul = $("mOrns");
+  ul.textContent = "";
+  for (const o of list) {
+    const li = document.createElement("li");
+    li.innerHTML = `<svg viewBox="-14 -14 28 28" aria-hidden="true">${ornSVG(o, "mg" + o.id)}</svg>`;
+    const info = document.createElement("div"), who = document.createElement("b"), note = document.createElement("span"), when = document.createElement("small");
+    info.className = "info";
+    who.textContent = o.from;
+    note.textContent = o.note || "(쪽지 없음)";
+    when.textContent = dateText(o.at);
+    info.append(who, note, when);
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = "떼기";
+    b.onclick = async () => {
+      b.disabled = true;
+      try { await call("DELETE", "/api/tree" + Q + "&id=" + encodeURIComponent(o.id)); li.remove(); toast("장식을 뗐어요.", true); loadManage(); }
+      catch (e) { b.disabled = false; toast(e.message); }
+    };
+    li.append(info, b);
+    ul.append(li);
+  }
+}
+
+/* ---------- 관리자 페이지 (/admin) ---------- */
+function setupAdmin() {
+  showPage("adminView", "관리자", "모든 트리를 보고, 관리가 필요한 트리를 정리할 수 있어요.");
+  $("headBtns").textContent = "";
+  $("headBtns").append(headLink("첫 트리", "/"));
+  $("aForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const k = $("aKey").value.trim();
+    if (!k) return;
+    store.set("tree-admin", k);
+    location.reload();
+  });
+  $("aLogout").onclick = () => { store.del("tree-admin"); location.reload(); };
+  if (!ADMIN) { $("aLogin").hidden = false; return; }
+  $("aList").hidden = false;
+  loadAdmin();
+}
+let adminTrees = [];
+async function loadAdmin() {
+  try { adminTrees = (await call("GET", "/api/trees")).trees || []; }
+  catch (e) {
+    if (e.status === 403) { store.del("tree-admin"); $("aList").hidden = true; $("aLogin").hidden = false; $("aMsg").textContent = "관리자 키가 맞지 않아요."; return; }
+    return toast(e.message);
+  }
+  renderAdmin();
+}
+function renderAdmin() {
+  const q = $("aSearch").value.trim().toLowerCase();
+  const list = adminTrees.filter((t) => !q || t.id.includes(q) || (t.title || "").toLowerCase().includes(q));
+  $("aTitle").textContent = `모든 트리 ${adminTrees.length}개`;
+  const ul = $("aTrees");
+  ul.textContent = "";
+  for (const t of list) {
+    const li = document.createElement("li"), info = document.createElement("div"), name = document.createElement("a"), meta = document.createElement("small");
+    info.className = "info";
+    name.href = treePath(t.id);
+    name.textContent = t.title || (t.id === "main" ? "첫 트리" : "(이름 없음)");
+    meta.textContent = `${t.id === "main" ? "/" : "/t/" + t.id} · 장식 ${t.count} · 쪽지 ${t.notes} · 마지막 ${dateText(t.lastAt || t.createdAt)}`;
+    info.append(name, meta);
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    const manage = headLink("관리", managePath(t.id));
+    manage.className = "tool";
+    acts.append(manage);
+    if (t.id !== "main") {
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "tool danger"; del.textContent = "삭제";
+      del.onclick = async () => {
+        if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "정말 삭제"; setTimeout(() => { del.dataset.armed = ""; del.textContent = "삭제"; }, 4000); return; }
+        del.disabled = true;
+        try { await call("DELETE", "/api/trees?t=" + t.id); adminTrees = adminTrees.filter((x) => x.id !== t.id); renderAdmin(); toast("트리를 삭제했어요.", true); }
+        catch (e) { del.disabled = false; toast(e.message); }
+      };
+      acts.append(del);
+    }
+    li.append(info, acts);
+    ul.append(li);
   }
 }
 
 /* ---------- 트리 만들기 화면 (/new), 없는 트리 ---------- */
-function hideTreeView(title, lead) {
-  stopped = true;
-  document.querySelector("main").hidden = true;
-  document.querySelector(".stepnav").hidden = true;
-  $("count").hidden = true;
-  $("mkLink").hidden = true;
-  $("title").textContent = title;
-  $("subtitle").textContent = lead;
-  document.title = title;
-  $("createView").hidden = false;
-}
 function renderMyTrees() {
-  const list = Object.entries(owners).filter(([id, o]) => /^[a-z2-9]{8}$/.test(id) && o && o.token);
+  const list = myTrees();
   $("myTreesWrap").hidden = !list.length;
   const ul = $("myTrees");
   ul.textContent = "";
-  for (const [id, o] of list) {
+  for (const t of list) {
     const li = document.createElement("li"), a = document.createElement("a"), sp = document.createElement("span");
-    a.href = "/t/" + id;
-    a.textContent = o.title || "내 트리";
-    sp.textContent = "/t/" + id;
+    a.href = treePath(t.id);
+    a.textContent = t.title;
+    sp.textContent = t.id === "main" ? "/" : "/t/" + t.id;
     a.append(sp); li.append(a); ul.append(li);
   }
 }
 function setupCreate() {
-  hideTreeView("크리스마스 트리", "친구들이 장식을 걸어주는 나만의 트리를 만들어요.");
+  showPage("createView", "크리스마스 트리", "친구들이 장식을 걸어주는 나만의 트리를 만들어요.");
+  $("headBtns").textContent = "";
+  if (ADMIN) $("headBtns").append(headLink("관리자", "/admin"));
   renderMyTrees();
   setupCreateForm();
 }
 function showNotFound() {
   if (WIDGET) { $("loadnote").hidden = true; return; }
-  hideTreeView("트리를 찾지 못했어요", "주소가 잘못됐거나 없어진 트리예요.");
+  showPage("createView", "트리를 찾지 못했어요", "주소가 잘못됐거나 없어진 트리예요.");
+  $("headBtns").textContent = "";
+  $("badge").hidden = true;
   $("createTitle").textContent = "내 트리 만들기";
   $("createLead").textContent = "대신 나만의 트리를 만들어 볼까요? 이름만 정하면 바로 만들어져요.";
   renderMyTrees();
@@ -716,19 +885,22 @@ function setupCreateForm() {
       owners[d.id] = { token: d.ownerToken, title: d.title };
       saveOwners();
       try { sessionStorage.setItem("tree-created", d.id); } catch (_) {}
-      location.href = "/t/" + d.id;
+      location.href = managePath(d.id);
     } catch (err) { msg(err.message); $("createBtn").disabled = false; }
   });
 }
 
 if (CREATE) setupCreate();
+else if (ADMIN_PAGE) setupAdmin();
 else if (UNKNOWN) showNotFound();
+else if (MANAGE) setupManage();
 else {
   buildTree();
-  if (WIDGET) setupWidget(); else setupPanel();
+  if (WIDGET) setupWidget(); else { setupHeader(); setupPanel(); }
   requestAnimationFrame(() => { resize(); tick(); });
   refresh();
   setInterval(() => { if (!stopped && (WIDGET || !document.hidden)) refresh(); }, WIDGET ? 15000 : 10000);
   document.addEventListener("visibilitychange", () => { if (!stopped && !document.hidden) refresh(); });
 }
+if (!WIDGET) $("aSearch")?.addEventListener("input", renderAdmin);
 }

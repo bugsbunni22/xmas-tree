@@ -2,9 +2,29 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "outputDirectory": "public",
-  "regions": ["icn1"],
+  "regions": [
+    "icn1"
+  ],
   "rewrites": [
-    { "source": "/t/:id", "destination": "/index.html" },
-    { "source": "/new", "destination": "/index.html" }
+    {
+      "source": "/t/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/t/:id/manage",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/manage",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/new",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    }
   ]
 }
