@@ -1,7 +1,7 @@
 // 저장소: 트리마다 Firestore 문서 하나(trees/<트리 id>)에 장식을 모두 모아 둬요.
 //   { title, owner(주인 토큰 해시), createdAt, orns: { <id>: 장식 }, snowUntil }
 // 목록을 볼 때 문서 1개만 읽으면 돼서 Firestore 무료 한도(하루 읽기 5만 회)를 아낄 수 있어요.
-// "main"은 처음 만든 내 트리예요 (주소 /). 주인은 ADMIN_KEY로 확인해요.
+// "main" 은 예전 첫 트리 id 예요. 이제 특별 취급하지 않고, 관리자가 목록에서 지울 수 있어요.
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
@@ -75,14 +75,14 @@ const firestoreStore = {
   async read(t) {
     const snap = await ref(t).get();
     const d = snap.exists ? snap.data() : {};
-    return { exists: snap.exists || t === MAIN, title: d.title || "", owner: d.owner || "", orns: d.orns || {}, snowUntil: Number(d.snowUntil) || 0 };
+    return { exists: snap.exists, title: d.title || "", owner: d.owner || "", orns: d.orns || {}, snowUntil: Number(d.snowUntil) || 0 };
   },
   // check(tree) → 오류 문구 또는 null. 통과하면 장식 저장.
   async add(t, id, item, check) {
     const fs = firestore(), r = ref(t);
     return fs.runTransaction(async (tx) => {
       const snap = await tx.get(r);
-      if (!snap.exists && t !== MAIN) return "트리를 찾지 못했어요.";
+      if (!snap.exists) return "트리를 찾지 못했어요.";
       const d = snap.exists ? snap.data() : {};
       const err = check({ owner: d.owner || "", orns: d.orns || {} });
       if (err) return err;
@@ -107,7 +107,7 @@ const firestoreStore = {
     const fs = firestore(), r = ref(t);
     return fs.runTransaction(async (tx) => {
       const snap = await tx.get(r);
-      if (!snap.exists && t !== MAIN) return false;
+      if (!snap.exists) return false;
       tx.set(r, { snowUntil: until }, { merge: true });
       return true;
     });
@@ -138,7 +138,7 @@ const firestoreStore = {
     const fs = firestore(), r = ref(t);
     return fs.runTransaction(async (tx) => {
       const snap = await tx.get(r);
-      if (!snap.exists && t !== MAIN) return "gone";
+      if (!snap.exists) return "gone";
       const d = snap.exists ? snap.data() : {};
       if (!allow({ owner: d.owner || "" })) return "denied";
       tx.set(r, { title }, { merge: true });

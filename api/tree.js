@@ -7,8 +7,7 @@ import { MAX_PER_PERSON, MAX_TOTAL, send, hash, clientKey, isTreeOwner, limited,
 
 export default async function handler(req, res) {
   try {
-    // 장식 걸기·떼기는 트리 코드가 꼭 있어야 해요 (없다고 main 에 저장하지 않게)
-    const t = treeId(req, req.method !== "GET");
+    const t = treeId(req); // 트리 코드가 꼭 있어야 해요
     if (!t) return send(res, 400, { error: "어느 트리인지 알 수 없어요. 페이지를 새로고침한 뒤 다시 해주세요." });
 
     if (req.method === "GET") {

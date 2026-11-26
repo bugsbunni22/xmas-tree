@@ -1,7 +1,7 @@
 // GET    /api/trees            모든 트리 목록 (관리자만, 헤더 x-tree-admin)
 // POST   /api/trees            새 트리 만들기 { title } → { id, ownerToken }
 // PATCH  /api/trees?t=트리     트리 이름 바꾸기 { title } (주인 토큰 또는 관리자)
-// DELETE /api/trees?t=트리     트리 삭제 (주인 토큰 또는 관리자, 첫 트리 main 은 지울 수 없어요)
+// DELETE /api/trees?t=트리     트리 삭제 (주인 토큰 또는 관리자)
 import { randomBytes } from "node:crypto";
 import { store, dbErrorMessage, MAIN } from "./_store.js";
 import { send, hash, limited, readBody, checkTitle, treeId, isTreeOwner, isAdmin, adminConfigured } from "./_lib.js";
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       return send(res, 500, { error: "트리를 만들지 못했어요. 다시 해주세요." });
     }
 
-    const t = treeId(req, true);
+    const t = treeId(req);
     if (!t) return send(res, 400, { error: "어느 트리인지 알 수 없어요." });
 
     if (req.method === "PATCH") {
@@ -45,7 +45,6 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      if (t === MAIN) return send(res, 400, { error: "첫 트리는 지울 수 없어요. 장식만 하나씩 뗄 수 있어요." });
       const r = await store().removeTree(t, (tree) => isTreeOwner(req, tree));
       if (r === "denied") return send(res, 403, { error: "트리 주인만 지울 수 있어요." });
       return send(res, 200, { ok: true });

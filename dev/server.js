@@ -34,7 +34,7 @@ http.createServer(async (req, res) => {
     const mod = await import(routes[url.pathname]);
     return mod.default(req, res);
   }
-  const page = ["/", "/new", "/admin", "/manage"].includes(url.pathname) || /^\/t\/[^/]+(\/manage)?$/.test(url.pathname); // vercel.json rewrites와 같게
+  const page = ["/", "/new", "/admin"].includes(url.pathname) || /^\/t\/[^/]+(\/manage)?$/.test(url.pathname); // vercel.json rewrites와 같게
   const file = path.join(root, "public", page ? "index.html" : url.pathname);
   if (!file.startsWith(path.join(root, "public")) || !fs.existsSync(file)) { res.statusCode = 404; return res.end("not found"); }
   res.setHeader("Content-Type", types[path.extname(file)] || "application/octet-stream");

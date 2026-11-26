@@ -15,10 +15,6 @@
       "destination": "/index.html"
     },
     {
-      "source": "/manage",
-      "destination": "/index.html"
-    },
-    {
       "source": "/new",
       "destination": "/index.html"
     },

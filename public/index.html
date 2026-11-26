@@ -111,6 +111,9 @@ main{max-width:1240px;margin:0 auto;padding:20px max(5vw,16px) 48px;display:grid
 .trees li{border-top:1px solid var(--line)}
 .trees a{display:flex;justify-content:space-between;gap:10px;padding:12px 2px;color:var(--ink);text-decoration:none;min-height:44px}
 .trees a span{color:var(--muted);font-size:14px}
+#myTreesWrap{margin-bottom:22px}
+#myTreesWrap h3{margin-top:0}
+.widgetnote{position:fixed;left:6px;right:6px;bottom:6px;background:#fffffff2;color:#13241e;border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.45;white-space:pre-line;box-shadow:0 4px 14px #0005}
 .panel h2{font-size:22px;margin:0 0 12px;line-height:1.2}
 .panel h3{font-size:16px;margin:16px 0 8px;color:var(--ink)}
 .panel h3 small{font-family:"Gowun Dodum";color:var(--muted);font-size:13px;margin-left:4px}
@@ -275,16 +278,17 @@ html.widget #tree{cursor:pointer}
   <section class="card" aria-labelledby="createTitle">
     <h2 id="createTitle">나도 트리 만들기</h2>
     <p class="lead" id="createLead">이름만 정하면 바로 만들어져요. 링크를 친구들에게 보내면 친구들이 장식을 걸어줘요.</p>
+    <div id="myTreesWrap" hidden>
+      <h3 id="myTreesHead">내 트리</h3>
+      <ul class="trees" id="myTrees"></ul>
+    </div>
+    <h3 id="newHead" hidden>새 트리 만들기</h3>
     <form id="createForm">
       <label for="newTitle">트리 이름</label>
       <input id="newTitle" maxlength="24" autocomplete="off" placeholder="예: 민지네 트리">
       <button class="btn" id="createBtn" type="submit">트리 만들기</button>
       <div class="msg" id="createMsg" role="status"></div>
     </form>
-    <div id="myTreesWrap" hidden>
-      <h3>내가 만든 트리</h3>
-      <ul class="trees" id="myTrees"></ul>
-    </div>
     <p class="foot">로그인은 필요 없어요. 트리를 만든 이 브라우저가 주인이 되고, 다른 기기에서는 트리의 '관리 링크'로 주인이 될 수 있어요.</p>
   </section>
 </div>

@@ -90,12 +90,12 @@ export function publicItem(id, o) {
   return { id, ...rest };
 }
 
-// 트리 id: "main"(내 첫 트리) 또는 8자 코드
+// 트리 id: 8자 코드 ("main" 은 예전 첫 트리라 관리자가 지울 수 있게만 남겨 둬요)
 export const TREE_ID = /^(main|[a-z2-9]{8})$/;
-// required=true 이면 ?t= 가 꼭 있어야 해요. 없으면 main 으로 새지 않게 null.
-export function treeId(req, required = false) {
+// ?t= 가 꼭 있어야 해요. 없으면 null (아무 트리에도 저장하지 않게)
+export function treeId(req) {
   const raw = req.query?.t ?? new URL(req.url, "http://x").searchParams.get("t");
-  if (raw == null || raw === "") return required ? null : "main";
+  if (raw == null || raw === "") return null;
   const t = String(raw);
   return TREE_ID.test(t) ? t : null;
 }
