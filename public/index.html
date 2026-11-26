@@ -74,7 +74,8 @@ label small{color:var(--muted);font-size:12px}
 .trees.admin .acts a.tool{display:inline-flex;justify-content:center;align-items:center;padding:0 10px;min-height:40px}
 .tool.danger{color:#b3261e;border-color:#f3c2bf}
 a.tool{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
-@media(min-width:821px){html.page body{height:auto;min-height:100vh;overflow:visible;display:block}}
+/* 트리가 아닌 화면(관리·관리자·시작)은 페이지 전체가 스크롤돼요. 트리 화면용 스크롤 막기보다 우선 */
+@media(min-width:821px){html.page:not(.widget) body{height:auto;min-height:100vh;overflow:visible;display:block}}
 @media(max-width:700px){.mgrid{grid-template-columns:minmax(0,1fr)}.headbtns{justify-content:flex-start}}
 .mk{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:22px;border:2px solid var(--gold);color:var(--gold);text-decoration:none;font:17px Jua,sans-serif;white-space:nowrap}
 .mk:hover{background:#f3c34d1f}
