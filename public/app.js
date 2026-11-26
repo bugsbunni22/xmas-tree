@@ -509,7 +509,7 @@ function template(name) {
     for (const [x, y] of [[5, 6], [5, 7], [6, 5], [4, 8]]) put(x, y, "4");
   } else if (name === "heart") {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      const u = (x - 7.5) / 6.5, v = -(y - 7) / 6.5;
+      const u = (x + 0.5 - 8) / 6.4, v = -(y + 0.5 - 8.8) / 6.4; // 위아래 1칸씩 여백, 윗부분 볼록 두 개까지
       if ((u * u + v * v - 1) ** 3 - u * u * v ** 3 <= 0) put(x, y, "6");
     }
   } else if (name === "tree") {

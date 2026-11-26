@@ -1,23 +1,27 @@
 {
   "name": "bongo-tree-widget",
   "productName": "TreeWidget",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "모니터 구석에 떠 있는 크리스마스 트리 위젯",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable"
+    "test": "xvfb-run -a electron --no-sandbox test/e2e.js",
+    "dist": "bash build/make-installer.sh"
   },
   "devDependencies": {
-    "electron": "^45.5.0",
-    "electron-builder": "^26.0.0"
+    "electron": "45.5.0",
+    "electron-builder": "^26.0.0",
+    "resedit": "^2.0.0",
+    "pe-library": "^1.0.0"
   },
   "build": {
     "appId": "bongo.tree.widget",
     "productName": "TreeWidget",
-    "win": {
-      "icon": "icon.png",
-      "target": "portable"
+    "artifactName": "TreeWidget-Setup-${version}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "main.js",
@@ -25,7 +29,26 @@
       "setup-preload.js",
       "setup.html",
       "icon.png",
-      "tray.png"
-    ]
-  }
+      "tray.png",
+      "package.json"
+    ],
+    "afterPack": "build/afterPack.js",
+    "electronLanguages": [
+      "ko",
+      "en-US"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    }
+  },
+  "author": "bugsbunni22"
 }
