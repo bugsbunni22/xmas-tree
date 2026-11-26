@@ -274,8 +274,26 @@ const ornFromEvent = (e) => {
   const g = e.target.closest && e.target.closest(".orn");
   return g ? items.find((o) => o.id === g.dataset.id) || null : null;
 };
-svg.addEventListener("pointerover", (e) => { const o = ornFromEvent(e); if (o && !pinned) showBubble(o); });
-svg.addEventListener("pointerout", (e) => { if (ornFromEvent(e) && !pinned) bubble.hidden = true; });
+// 마우스: 장식 위에 있는 동안만 쪽지를 보여주고, 벗어나면 바로 닫아요.
+// 터치: 올려 둘 수가 없어서 탭하면 열리고(pinned) 다른 곳을 탭하면 닫혀요.
+let hoverOrn = null, lastPointer = "mouse";
+function endHover() { hoverOrn = null; if (!pinned) bubble.hidden = true; }
+svg.addEventListener("pointerdown", (e) => { lastPointer = e.pointerType || "mouse"; }, true);
+svg.addEventListener("pointermove", (e) => {
+  if (e.pointerType !== "mouse") return;
+  const o = ornFromEvent(e);
+  if (o) { if (o !== hoverOrn) { hoverOrn = o; pinned = null; showBubble(o); } }
+  else if (hoverOrn) endHover();
+});
+svg.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") endHover(); });
+document.addEventListener("mouseleave", endHover);          // 창 밖으로 (위젯 포함)
+window.addEventListener("blur", () => { pinned = null; endHover(); });
+// 탭(터치)일 때만 쪽지를 고정해요. 마우스 클릭은 고정하지 않아요.
+function togglePin(o) {
+  if (lastPointer === "mouse") return;
+  pinned = pinned === o ? null : o;
+  if (pinned) showBubble(o); else bubble.hidden = true;
+}
 
 /* ---------- 장식 공방 (웹사이트) ---------- */
 let design = { kind: "shape", type: "ball", c1: "#d8323e", c2: "#ffffff", pattern: "none", shine: false, size: 1, rot: 0, text: "", px: "0".repeat(N * N), pal: PAL_DEFAULT.slice() };
@@ -388,7 +406,7 @@ function setupPanel() {
   svg.addEventListener("pointerleave", () => { if (!spot) drawGhost(null); });
   svg.addEventListener("click", (e) => {
     const o = ornFromEvent(e), p = toSvg(e);
-    if (o) { pinned = pinned === o ? null : o; if (pinned) showBubble(o); else bubble.hidden = true; return; }
+    if (o) { togglePin(o); return; }
     pinned = null; bubble.hidden = true;
     if (inTree(p.x, p.y)) {
       spot = p; drawGhost(spot, true);
@@ -534,7 +552,7 @@ function template(name) {
 function setupWidget() {
   svg.addEventListener("click", (e) => {
     const o = ornFromEvent(e);
-    if (o) { pinned = pinned === o ? null : o; if (pinned) showBubble(o); else bubble.hidden = true; return; }
+    if (o) { togglePin(o); return; }
     if (e.target === svg) return; // 빈 공간
     window.open(SITE_URL, "_blank");
   });
