@@ -67,7 +67,7 @@ Every push to `main` redeploys automatically.
 
 ### Install
 
-1. Download `TreeWidget-Setup-<version>.exe` from [Releases](../../releases) and run it. No administrator rights are needed.
+1. Download `TreeWidget-Setup-<version>.zip` from [Releases](../../releases), extract it, and run `TreeWidget-Setup-<version>.exe`. No administrator rights are needed.
    - The installer is not code-signed, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
 2. On first launch, enter the address of your tree (for example `https://<your-site>/t/<code>`).
 
