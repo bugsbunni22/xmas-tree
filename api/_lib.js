@@ -85,8 +85,11 @@ export function publicItem(id, o) {
 
 // 트리 id: "main"(내 첫 트리) 또는 8자 코드
 export const TREE_ID = /^(main|[a-z2-9]{8})$/;
-export function treeId(req) {
-  const t = String(req.query?.t ?? new URL(req.url, "http://x").searchParams.get("t") ?? "main");
+// required=true 이면 ?t= 가 꼭 있어야 해요. 없으면 main 으로 새지 않게 null.
+export function treeId(req, required = false) {
+  const raw = req.query?.t ?? new URL(req.url, "http://x").searchParams.get("t");
+  if (raw == null || raw === "") return required ? null : "main";
+  const t = String(raw);
   return TREE_ID.test(t) ? t : null;
 }
 export function queryParam(req, name) {
