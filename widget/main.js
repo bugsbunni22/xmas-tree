@@ -5,7 +5,7 @@ const fs = require("fs");
 
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
-const APP_ID = "bongo.tree.widget";   // package.json build.appId 와 같아야 해요
+const APP_ID = "xmastree.widget";   // package.json build.appId 와 같아야 해요
 const LOGIN_NAME = "TreeWidget";       // 자동 실행 레지스트리 이름 (제거할 때 installer.nsh 가 지워요)
 const BASE = [230, 302];               // 100% 크기
 const SCALE_MIN = 0.55, SCALE_MAX = 2.2;

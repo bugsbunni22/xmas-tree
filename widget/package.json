@@ -1,7 +1,7 @@
 {
-  "name": "bongo-tree-widget",
+  "name": "xmas-tree-widget",
   "productName": "TreeWidget",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "모니터 구석에 떠 있는 크리스마스 트리 위젯",
   "main": "main.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "pe-library": "^1.0.0"
   },
   "build": {
-    "appId": "bongo.tree.widget",
+    "appId": "xmastree.widget",
     "productName": "TreeWidget",
     "artifactName": "TreeWidget-Setup-${version}.${ext}",
     "directories": {

@@ -1,88 +1,98 @@
-# 크리스마스 트리
+# Christmas Tree
 
-친구들이 장식을 걸고 쪽지를 남겨주는 크리스마스 트리 웹사이트와, 그 트리를 모니터 구석에 띄워 주는 Windows 위젯이에요.
+A shared Christmas tree on the web. Friends open your tree's link, make an ornament, hang it anywhere on the tree, and leave a note. An optional Windows widget keeps your tree in a corner of your screen.
 
-- 사이트: https://xmas-tree-seven.vercel.app
-- 나도 트리 만들기: https://xmas-tree-seven.vercel.app/new
+The interface is in Korean.
 
-## 사이트 쓰는 법
+## Features
 
-**장식 걸기**
-1. 트리 링크를 열어요.
-2. 장식을 만들어요. 방법은 두 가지예요.
-   - 모양 고르기: 8가지 모양, 색, 무늬
-   - 직접 그리기: 16×16 그림판
-   - 둘 다 글자 새기기, 크기, 기울기, 반짝이를 넣을 수 있어요.
-3. 트리를 눌러 걸 자리를 정해요.
-4. 이름과 쪽지를 적고 **트리에 걸기**를 눌러요.
-- 한 사람당 장식 3개까지 걸 수 있어요. 내가 건 장식은 내가 뗄 수 있어요.
+- **Ornaments**
+  - Pick one of 8 shapes with any color, a pattern, and a secondary color, or draw your own on a 16×16 pixel canvas.
+  - Every ornament can have engraved text (up to 3 characters), a size, a rotation, and a shine effect.
+- **Notes**: Each ornament can carry a short note. Hover or tap an ornament to read it.
+- **Trees for everyone**
+  - Anyone can create a tree at `/new` and share it at `/t/<code>`. No sign-up needed.
+  - The browser that creates a tree becomes its owner. A manage link lets the owner use other devices too.
+- **Owner tools**: Copy the share link, rename the tree, and remove any ornament.
+- **Snow**: Visitors can make it snow on the tree for a minute.
+- **Desktop widget (Windows)**
+  - A transparent, always-on-top tree that updates live and opens the site when clicked.
+  - Drag it anywhere and resize it with Ctrl + mouse wheel.
 
-**내 트리 만들기**
-1. `/new`에서 이름만 적으면 `…/t/코드` 주소로 내 트리가 생겨요. 로그인은 필요 없어요.
-2. 트리를 만든 브라우저가 주인이 돼요. 주인 메뉴에서 이런 걸 할 수 있어요.
-   - 공유 링크 복사
-   - 트리 이름 바꾸기
-   - 아무 장식이나 떼기
-3. 다른 기기에서도 주인이 되려면 주인 메뉴의 **관리 링크**를 그 기기에서 열면 돼요. 관리 링크는 본인만 갖고 있어야 해요.
+## Deploy
 
-## 위젯 설치 (Windows)
-
-1. `TreeWidget-Setup-버전.exe`를 실행해요. 관리자 권한은 필요 없어요.
-   - "PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누르면 돼요. 서명 없는 앱이라 그래요.
-2. 처음 실행하면 트리 주소를 물어봐요. 내 트리 주소를 넣으면 모니터 구석에 트리가 떠요.
-   - 예: `https://xmas-tree-seven.vercel.app/t/코드`
-
-**쓰는 법**
-- **사이트 열기**: 트리를 짧게 눌러요.
-- **옮기기**: 트리를 꾹 눌러 끌어요. 화면 가장자리에 착 붙고, 옮긴 자리는 기억돼요.
-- **크기 바꾸기**: 트리 위에서 Ctrl + 마우스 휠을 돌려요.
-- **메뉴**: 작업 표시줄 오른쪽 트리 아이콘을 오른쪽 클릭해요. 위치, 크기, 모니터, 눈, 자동 실행, 주소 바꾸기가 있어요.
-
-**업데이트와 제거**
-- **업데이트**: 새 설치 파일을 그냥 실행하면 돼요. 설정은 그대로 남아요.
-- **제거**: Windows **설정 → 앱**에서 "크리스마스 트리 위젯"을 제거해요.
-
-## 직접 배포하기
-
-Vercel(사이트·API)과 Firebase Firestore(저장소)를 써요. 둘 다 무료 요금제로 충분해요.
+The site and API run on [Vercel](https://vercel.com), and data is stored in [Cloud Firestore](https://firebase.google.com/docs/firestore). The free tiers of both are enough for personal use.
 
 ### 1. Firebase
 
-1. https://console.firebase.google.com 에서 프로젝트를 만들어요.
-2. **빌드 → Firestore Database → 데이터베이스 만들기**
-   - 위치는 `asia-northeast3 (서울)`, Standard 버전, **프로덕션 모드**로 만들어요.
-   - **규칙** 탭에 `firestore.rules` 내용을 붙여넣고 **게시**해요.
-3. **⚙️ 프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성**을 누르면 JSON 파일이 받아져요.
-   - 이 파일은 비밀번호와 같아요. 저장소에 올리거나 공유하지 마세요.
+1. Create a project in the [Firebase console](https://console.firebase.google.com).
+2. Create a Cloud Firestore database:
+   - Go to **Build → Firestore Database → Create database**.
+   - Choose Standard edition, the default database ID, a location near your users, and production mode.
+3. In the **Rules** tab, paste the contents of [`firestore.rules`](firestore.rules) and publish. These rules block all direct browser access, so only the API can read or write.
+4. Download a service account key: go to **Project settings → Service accounts → Generate new private key**.
+   - Keep this JSON file secret and never commit it.
 
 ### 2. Vercel
 
-1. https://vercel.com/new 에서 이 저장소를 **Import**하고 Deploy해요. Framework Preset은 `Other`로 둬요.
-2. 프로젝트 **Settings → Environment Variables**에 아래 값을 추가해요. Production 환경에 체크해야 해요.
+1. [Import this repository](https://vercel.com/new) into Vercel. Leave the framework preset as **Other**.
+2. Under **Project → Settings → Environment Variables**, add the following, enabled for Production:
 
-   | Key | Value |
+   | Name | Value |
    |---|---|
-   | `FIREBASE_SERVICE_ACCOUNT` | 서비스 계정 JSON 파일 내용 전체 (Secret) |
-   | `ADMIN_KEY` | (선택) 첫 트리(`/`) 관리용 비밀 문자열 |
-   | `MAX_PER_PERSON` | (선택) 한 사람당 장식 개수, 기본 3 |
+   | `FIREBASE_SERVICE_ACCOUNT` | The full contents of the service account JSON file (mark it as Secret) |
+   | `ADMIN_KEY` | *Optional.* A secret string that gives owner access to the default tree at `/` |
+   | `MAX_PER_PERSON` | *Optional.* Ornaments each visitor can hang per tree (default `3`) |
 
-3. **Deployments → 맨 위 배포 `⋯` → Redeploy**를 눌러요. 환경 변수는 다시 배포해야 적용돼요.
-4. 사이트에 오류 문구가 보이면 그대로 따라 하면 돼요. 환경 변수, JSON 형식, Firestore 생성 여부 같은 원인을 알려줘요.
+3. Redeploy so the variables take effect.
+   - If the storage connection is misconfigured, the site shows a message that names the cause, such as a missing variable, invalid JSON, or a missing database.
 
-이후에는 `main` 브랜치에 푸시할 때마다 자동으로 배포돼요.
+Every push to `main` redeploys automatically.
 
-### 3. 관리
+### 3. Pages
 
-- **첫 트리(`/`) 관리**: `/?admin=ADMIN_KEY값`으로 한 번 들어가면 그 브라우저가 관리자가 돼요.
-- **장식·트리 지우기**: Firebase 콘솔 → Firestore → `trees/<코드>` 문서에서 지워요. 첫 트리는 `trees/main`이에요.
-- **사이트 문구 바꾸기**: `public/config.js`에서 바꿔요.
+| Path | Page |
+|---|---|
+| `/` | The default tree |
+| `/new` | Create a tree |
+| `/t/<code>` | A tree created by a visitor |
 
-### 4. 위젯 설치 파일 만들기
+### 4. Administration
 
-```
+- **Default tree**: To manage the tree at `/`, open `/?admin=<ADMIN_KEY>` once. That browser keeps owner access.
+- **Deleting data**: Ornaments and trees live in the `trees/<code>` documents in Firestore, and the default tree is `trees/main`. Delete them from the Firebase console.
+- **Site text**: Edit the title and subtitle in [`public/config.js`](public/config.js).
+
+## Desktop widget (Windows)
+
+### Install
+
+1. Download `TreeWidget-Setup-<version>.exe` from [Releases](../../releases) and run it. No administrator rights are needed.
+   - The installer is not code-signed, so Windows SmartScreen may warn you. Choose **More info → Run anyway**.
+2. On first launch, enter the address of your tree (for example `https://<your-site>/t/<code>`).
+
+### Use
+
+- **Open the site**: Click the tree.
+- **Move**: Press and drag the tree. It snaps to screen edges and remembers its position.
+- **Resize**: Scroll with Ctrl held down over the tree. The size ranges from 55% to 220%.
+- **Notes**: Hover an ornament to read its note.
+- **Tray menu**: Right-click the tray icon for position, size, monitor, snow, start with Windows, the tree address, and quit.
+- **Update**: Run a newer installer. Your settings are kept.
+- **Uninstall**: Go to Windows **Settings → Apps**. This also removes the start-with-Windows entry.
+
+### Build the installer
+
+Requires Node.js and [NSIS](https://nsis.sourceforge.io):
+
+- Debian/Ubuntu: `apt install nsis`
+- macOS: `brew install makensis`
+- Windows: install NSIS and run the commands below from Git Bash
+
+```bash
 cd widget
 npm install
-npm run dist     # dist/TreeWidget-Setup-<버전>.exe
+npm run dist   # → widget/dist/TreeWidget-Setup-<version>.exe
 ```
 
-리눅스·맥에서도 wine 없이 만들어져요. 버전은 `widget/package.json`의 `version`을 올리면 돼요.
+No Wine is needed on macOS or Linux. To release a new version, bump `version` in `widget/package.json`.

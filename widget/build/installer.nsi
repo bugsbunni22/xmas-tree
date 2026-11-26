@@ -6,7 +6,7 @@ SetCompressor /SOLID lzma
 
 !define APP_NAME "크리스마스 트리 위젯"
 !define APP_EXE "TreeWidget.exe"
-!define APP_ID "bongo.tree.widget"
+!define APP_ID "xmastree.widget"
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\TreeWidget"
 !define RUN_KEY "Software\Microsoft\Windows\CurrentVersion\Run"
 
