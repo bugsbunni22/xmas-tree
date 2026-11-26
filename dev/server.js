@@ -16,6 +16,7 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_PRIVATE_KEY &
     async setSnow(t, u) { const d = get(t); if (!d) return false; d.snowUntil = u; return true; },
     async create(t, data) { if (trees.has(t)) return false; trees.set(t, { ...data, orns: {}, snowUntil: 0 }); return true; },
     async rename(t, title, allow) { const d = get(t); if (!d) return "gone"; if (!allow(d)) return "denied"; d.title = title; return "ok"; },
+    async setOwner(t, owner) { const d = get(t); if (!d) return "gone"; d.owner = owner; return "ok"; },
     async list() { const { summarize } = await import("../api/_store.js"); return [...trees].map(([id, d]) => summarize(id, d)); },
     async removeTree(t, allow) { const d = get(t); if (!d) return "gone"; if (!allow(d)) return "denied"; trees.delete(t); return "ok"; }
   };

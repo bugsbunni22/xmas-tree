@@ -53,6 +53,8 @@ header{padding:clamp(20px,3vw,40px) max(5vw,16px) 0;max-width:1240px;margin:0 au
 .warn{color:#9a5b00}
 .btn.danger{background:#b3261e;color:#fff;flex:0 0 auto}
 .dangerzone{border:2px solid #f3c2bf}
+.claim{border:2px solid #f3dc9a;background:#fff8e6}
+.claim .btn{flex:0 0 auto}
 .arow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
 .arow h2{margin:0}
 #aSearch{margin-bottom:8px}
@@ -226,6 +228,15 @@ html.widget #tree{cursor:pointer}
     <a class="btn linkbtn" id="mBack" href="/">트리로 가기</a>
   </section>
   <div class="mgrid" id="mPanels">
+    <section class="card span2 claim" id="mClaim" hidden>
+      <h2>이 브라우저를 주인으로 만들기</h2>
+      <p class="lead">트리를 만든 브라우저나 기기를 잃어버렸을 때 써요. 이 브라우저가 새 주인이 되고, 원래 주인 브라우저와 예전 관리 링크로는 더 이상 관리할 수 없어요.</p>
+      <button type="button" class="btn" id="claimBtn">이 브라우저를 주인으로</button>
+      <div id="claimConfirm" hidden>
+        <p class="warn">정말 주인을 바꿀까요? 원래 주인은 관리 권한을 잃어요.</p>
+        <div class="row"><button type="button" class="btn" id="claimYes">주인 바꾸기</button><button type="button" class="btn alt" id="claimNo">취소</button></div>
+      </div>
+    </section>
     <section class="card" id="mShare">
       <h2>친구들에게 공유</h2>
       <p class="lead" id="mShareLead">이 링크를 보내면 친구들이 장식을 걸어줄 수 있어요.</p>

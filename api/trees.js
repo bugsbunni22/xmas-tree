@@ -2,6 +2,7 @@
 // POST   /api/trees            새 트리 만들기 { title } → { id, ownerToken }
 // PATCH  /api/trees?t=트리     트리 이름 바꾸기 { title } (주인 토큰 또는 관리자)
 // DELETE /api/trees?t=트리     트리 삭제 (주인 토큰 또는 관리자)
+// POST   /api/trees?t=트리&action=claim   주인 다시 정하기 (관리자만) → { ownerToken }
 import { randomBytes } from "node:crypto";
 import { store, dbErrorMessage, MAIN } from "./_store.js";
 import { send, hash, limited, readBody, checkTitle, treeId, isTreeOwner, isAdmin, adminConfigured } from "./_lib.js";
@@ -16,6 +17,16 @@ export default async function handler(req, res) {
       if (!isAdmin(req)) return send(res, 403, { error: "관리자 키가 맞지 않아요." });
       const trees = (await store().list()).sort((a, b) => (b.lastAt || b.createdAt) - (a.lastAt || a.createdAt));
       return send(res, 200, { trees });
+    }
+
+    if (req.method === "POST" && new URL(req.url, "http://x").searchParams.get("action") === "claim") {
+      if (!isAdmin(req)) return send(res, 403, { error: "관리자만 주인을 다시 정할 수 있어요." });
+      const t = treeId(req);
+      if (!t || t === MAIN) return send(res, 400, { error: "어느 트리인지 알 수 없어요." });
+      const ownerToken = randomBytes(24).toString("hex");
+      const r = await store().setOwner(t, hash(ownerToken));
+      if (r === "gone") return send(res, 404, { error: "트리를 찾지 못했어요." });
+      return send(res, 200, { id: t, ownerToken });
     }
 
     if (req.method === "POST") {

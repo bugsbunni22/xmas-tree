@@ -133,6 +133,16 @@ const firestoreStore = {
       return "ok";
     });
   },
+  // 주인 다시 정하기 (관리자). 예전 주인 토큰·관리 링크는 더 이상 안 돼요. 결과: "ok" | "gone"
+  async setOwner(t, owner) {
+    const fs = firestore(), r = ref(t);
+    return fs.runTransaction(async (tx) => {
+      const snap = await tx.get(r);
+      if (!snap.exists) return "gone";
+      tx.update(r, { owner });
+      return "ok";
+    });
+  },
   // allow(tree) → true면 이름 바꾸기. 결과: "ok" | "gone" | "denied"
   async rename(t, title, allow) {
     const fs = firestore(), r = ref(t);

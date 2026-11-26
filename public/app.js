@@ -720,6 +720,22 @@ async function setupManage() {
   if (OWNER_TOKEN) { $("manageUrl").value = location.origin + treePath(TREE) + "#own=" + OWNER_TOKEN; $("copyManage").onclick = () => copyText($("manageUrl")); }
   else $("mDevice").hidden = true;
 
+  // 관리자가 남의 트리를 볼 때: 주인 다시 정하기 (주인 브라우저를 잃어버렸을 때)
+  if (ADMIN && !MY_TREE) {
+    $("mClaim").hidden = false;
+    $("claimBtn").onclick = () => { $("claimBtn").hidden = true; $("claimConfirm").hidden = false; };
+    $("claimNo").onclick = () => { $("claimBtn").hidden = false; $("claimConfirm").hidden = true; };
+    $("claimYes").onclick = async () => {
+      $("claimYes").disabled = true;
+      try {
+        const d = await call("POST", "/api/trees" + Q + "&action=claim");
+        owners[TREE] = { token: d.ownerToken, title: treeTitle || "" };
+        saveOwners();
+        location.reload();
+      } catch (e) { toast(e.message); $("claimYes").disabled = false; }
+    };
+  }
+
   let justMade = false;
   try { justMade = sessionStorage.getItem("tree-created") === TREE; if (justMade) sessionStorage.removeItem("tree-created"); } catch (e) {}
   if (justMade) { $("mShare").classList.add("new"); $("mShareLead").textContent = "트리를 만들었어요! 이 링크를 친구들에게 보내면 장식을 걸어줄 수 있어요."; }
